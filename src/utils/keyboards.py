@@ -1,10 +1,8 @@
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, Dict, List
 
 from aiogram.utils.keyboard import (
     InlineKeyboardBuilder,
     InlineKeyboardButton,
-    ReplyKeyboardBuilder,
     KeyboardButton
 )
 
@@ -15,52 +13,40 @@ if TYPE_CHECKING:
 )
 
 
-@dataclass
-class Keyboard:
-    buttons: Dict[str, str]
-
-
-@dataclass(slots=True)
-class InlineKeyboard(Keyboard):
+def get_cancel_button() -> "InlineKeyboardMarkup":
+    """
+    Forming inline cancel button.
+    """
     keyboard = InlineKeyboardBuilder()
+    button = InlineKeyboardButton(
+        text='Отмена',
+        callback_data='cancel',
+    )
+    keyboard.add(button).adjust(1)
 
-    @property
-    def cancel(self) -> "InlineKeyboardMarkup":
-        """
-        Returns cancel button as markup.
-        """
-        button = InlineKeyboardButton(
-            text='Отмена',
-            callback_data=self.buttons['cancel'],
+    return keyboard.as_markup()
+
+
+def get_inline_menu(buttons: Dict[str, str]) -> "InlineKeyboardMarkup":
+    """
+    Forming inline menu.
+    """
+    keyboard = InlineKeyboardBuilder()
+    for item, callback in buttons.items():
+        keyboard.button(
+            text=item,
+            callback_data=callback,
         )
-        self.keyboard.add(button)
-        self.keyboard.adjust(1)
-        return self.keyboard.as_markup()
-
-    def get_inline_menu(self) -> "InlineKeyboardMarkup":
-        """
-        Returns inline menu as markup.
-        """
-        for item, callback in self.buttons.items():
-            self.keyboard.button(
-                text=item,
-                callback_data=callback,
-            )
-        self.keyboard.adjust(2)
-        return self.keyboard.as_markup()
+    keyboard.adjust(2)
+    return keyboard.as_markup()
 
 
-@dataclass(slots=True)
-class ReplyKeyboard(Keyboard):
-    keyboard = ReplyKeyboardBuilder()
-
-    @property
-    def markup(self) -> "ReplyKeyboardMarkup":
-        """
-        Returns reply buttons markup.
-        """
-        return ReplyKeyboardMarkup(
-            keyboard=[[KeyboardButton(text=btn) for btn in self.buttons]],
-            one_time_keyboard=True,
-            resize_keyboard=True,
-        )
+def get_reply_markup(buttons: List[str]) -> "ReplyKeyboardMarkup":
+    """
+    Returns reply buttons markup.
+    """
+    return ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text=btn) for btn in buttons]],
+        one_time_keyboard=True,
+        resize_keyboard=True,
+    )
