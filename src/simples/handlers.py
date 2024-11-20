@@ -21,10 +21,7 @@ async def start(event: Union[Message, CallbackQuery]) -> None:
     """
     Handle start command.
     """
-    if isinstance(event, Message):
-        message = event
-    else:
-        message = event.message
+    message = event if isinstance(event, Message) else event.message
 
     if message.reply_markup:
         await message.edit_reply_markup(reply_markup=None)
@@ -47,10 +44,7 @@ async def handle_prices(event: Union[Message, CallbackQuery]) -> None:
     """
     Message and Callback handler for prices.
     """
-    if isinstance(event, Message):
-        message = event
-    else:
-        message = event.message
+    message = event if isinstance(event, Message) else event.message
 
     if message.reply_markup:
         await message.edit_reply_markup(reply_markup=None)
@@ -73,10 +67,7 @@ async def handle_help(event: Union[Message, CallbackQuery]) -> None:
     """
     Message and Callback handler for help.
     """
-    if isinstance(event, Message):
-        message = event
-    else:
-        message = event.message
+    message = event if isinstance(event, Message) else event.message
 
     if message.reply_markup:
         await message.edit_reply_markup(reply_markup=None)
