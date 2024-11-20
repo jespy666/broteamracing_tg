@@ -1,16 +1,13 @@
 from typing import TYPE_CHECKING, Dict, List
 
-from aiogram.utils.keyboard import (
+from aiogram.utils.keyboard import (  # type: ignore
     InlineKeyboardBuilder,
     InlineKeyboardButton,
-    KeyboardButton
+    KeyboardButton,
 )
 
 if TYPE_CHECKING:
-    from aiogram.types import (
-        ReplyKeyboardMarkup,
-        InlineKeyboardMarkup
-)
+    from aiogram.types import ReplyKeyboardMarkup, InlineKeyboardMarkup
 
 
 def get_cancel_button() -> "InlineKeyboardMarkup":
@@ -19,8 +16,8 @@ def get_cancel_button() -> "InlineKeyboardMarkup":
     """
     keyboard = InlineKeyboardBuilder()
     button = InlineKeyboardButton(
-        text='Отмена',
-        callback_data='cancel',
+        text="Отмена",
+        callback_data="cancel",
     )
     keyboard.add(button).adjust(1)
 

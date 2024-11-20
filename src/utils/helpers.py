@@ -1,10 +1,10 @@
 MENU = {
-    'Записаться': 'book',
-    'Помощь': 'help',
-    'Регистрация': 'create',
-    'Сброс пароля': 'reset',
-    'Отмена записи': 'cancel',
-    'Изменить запись': 'edit',
+    "Записаться": "book",
+    "Помощь": "help",
+    "Регистрация": "create",
+    "Сброс пароля": "reset",
+    "Отмена записи": "cancel",
+    "Изменить запись": "edit",
 }
 
 
@@ -17,5 +17,5 @@ def read_template(title: str) -> str:
     Returns:
         Message template as string.
     """
-    with open(f'src/utils/templates/{title}', 'r') as file:
+    with open(f"src/utils/templates/{title}", "r") as file:
         return file.read()
