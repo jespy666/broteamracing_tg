@@ -5,8 +5,8 @@ class NewBookingState(StatesGroup):
     """
     States for booking create.
     """
-    email = State()
-    bikes = State()
+
     date = State()
-    start = State()
+    time = State()
     hours = State()
+    bikes = State()

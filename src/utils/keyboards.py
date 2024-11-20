@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Dict, List
+from typing import TYPE_CHECKING, Dict, List, Union
 
 from aiogram.utils.keyboard import (  # type: ignore
     InlineKeyboardBuilder,
@@ -38,12 +38,12 @@ def get_inline_menu(buttons: Dict[str, str]) -> "InlineKeyboardMarkup":
     return keyboard.as_markup()
 
 
-def get_reply_markup(buttons: List[str]) -> "ReplyKeyboardMarkup":
+def get_reply_markup(buttons: List[Union[str, int]]) -> "ReplyKeyboardMarkup":
     """
     Returns reply buttons markup.
     """
     return ReplyKeyboardMarkup(
-        keyboard=[[KeyboardButton(text=btn) for btn in buttons]],
+        keyboard=[[KeyboardButton(text=str(btn)) for btn in buttons]],
         one_time_keyboard=True,
         resize_keyboard=True,
     )

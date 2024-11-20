@@ -1,2 +1,5 @@
 [tool.mypy]
 strict = true
+
+[tool.black]
+line-length = 79

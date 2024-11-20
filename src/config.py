@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     )
     BOT_TOKEN: str
     API_TOKEN: str
+    BASE_API_URL: str
 
 
 settings = Settings()  # type: ignore
