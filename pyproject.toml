@@ -1,5 +1,23 @@
-[tool.mypy]
-strict = true
-
 [tool.black]
 line-length = 79
+
+[tool.poetry]
+name = "broteamracing-tg"
+version = "0.1.0"
+description = "Бот для приложения broteamracing.ru"
+authors = ["Anthony Sergeevich <jespy.kz@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+aiogram = "^3.18.0"
+pydantic-settings = "^2.8.1"
+
+
+[tool.poetry.group.dev.dependencies]
+black = "^25.1.0"
+ruff = "^0.11.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
