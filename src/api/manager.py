@@ -1,32 +1,108 @@
-from dataclasses import dataclass
-from typing import List, Optional
+from contextlib import asynccontextmanager
+
+from typing import Union, AsyncGenerator, Any, Dict, List
 
 from aiohttp import ClientSession
 
-from src import settings
-from src.utils import exceptions as exc
+from config import settings
+from src import exceptions as exc
 
 
-@dataclass(slots=True)
-class APIManager(ClientSession):
+class AsyncSession:
     """
-    API connect manager for BroTeamRacing.ru
+    Асинхронная сессия aiohttp.
     """
 
-    base_url: str = settings.BASE_API_URL
+    def __init__(self) -> None:
+        self.client = ClientSession(
+            base_url=settings.BASE_API_URL,
+            headers={
+                "API-KEY": settings.API_TOKEN,
+                "Platform": "Telegram",
+            },
+        )
 
-    async def get_available_slots(self, date: str) -> Optional[List[str]]:
+    @asynccontextmanager
+    async def get_session(self) -> AsyncGenerator[ClientSession, Any]:
         """
-        Get available booking slots.
+        Контекстный менеджер сессии AioHttp.
+        """
+        async with self.client as session:
+            yield session
 
-        Args:
-            date: Date string.
+
+class APIManager(AsyncSession):
+    """
+    Менеджер API подключения к основному приложению.
+    """
+
+    async def set_telegram_id(
+        self,
+        user_id: int,
+        telegram_id: Union[str, int],
+        url: str = "/api/v1/set_telegram_id/",
+    ) -> None:
         """
-        url = f"{self.base_url}/get-slots/"
+        Установка Telegram ID пользователю на сайт, что-бы получать уведомления.
+        """
+        payload = {
+            "user_id": user_id,
+            "telegram_id": telegram_id,
+        }
+        async with self.get_session() as session:
+            async with session.post(url, data=payload) as response:
+                if not response.status == 200:
+                    raise exc.APIError(
+                        detail=response.json().get("detail"),
+                        status_code=response.status,
+                    )
+
+    async def check_telegram_id(
+        self,
+        telegram_id: str,
+        url: str = "/api/v1/check_tg_id/",
+    ) -> bool:
+        """
+        Проверка, что пользователь привязан к ТГ.
+        """
+        async with self.get_session() as session:
+            url = f"{url}?telegram_id={telegram_id}"
+            async with session.get(url) as response:
+                return response.status == 200
+
+    async def enable_notifications(
+        self,
+        telegram_id: str,
+        url: str = "/api/v1/enable_tg_notifications/",
+    ) -> None:
+        """
+        Включение уведомлений в Телеграм.
+        """
+        payload = {"telegram_id": telegram_id}
+        async with self.get_session() as session:
+            async with session.post(url, data=payload) as response:
+                if not response.status == 200:
+                    raise exc.APIError(
+                        status_code=response.status,
+                        detail=response.json().get("detail"),
+                    )
+
+    async def load_day_info(
+        self,
+        date: str,
+        url: str = "/api/v1/get_day_info/",
+    ) -> List[Dict[str, Any]]:
+        """
+        Загрузка данных по дню.
+        (Свободные слоты, Доступные байки, Доступные инструкторы).
+        """
         payload = {"date": date}
-        async with self.post(url, json=payload) as response:
-            match response.status:
-                case 200:
-                    return await response.json()
-                case _:
-                    raise exc.APIConnectionError
+        async with self.get_session() as session:
+            async with session.post(url, data=payload) as response:
+                data = await response.json()
+                if not response.status == 200:
+                    raise exc.APIError(
+                        status_code=response.status,
+                        detail=data.get("detail"),
+                    )
+                return data
