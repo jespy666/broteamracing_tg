@@ -1,23 +1,24 @@
 from typing import TYPE_CHECKING, Dict, List, Union
 
-from aiogram.utils.keyboard import (  # type: ignore
+from aiogram.utils.keyboard import (
     InlineKeyboardBuilder,
     InlineKeyboardButton,
     KeyboardButton,
 )
+from aiogram.types import ReplyKeyboardMarkup
 
 if TYPE_CHECKING:
-    from aiogram.types import ReplyKeyboardMarkup, InlineKeyboardMarkup
+    from aiogram.types import InlineKeyboardMarkup
 
 
 def get_cancel_button() -> "InlineKeyboardMarkup":
     """
-    Forming inline cancel button.
+    Кнопка отмены.
     """
     keyboard = InlineKeyboardBuilder()
     button = InlineKeyboardButton(
         text="Отмена",
-        callback_data="cancel",
+        callback_data="cancel-dialogue",
     )
     keyboard.add(button).adjust(1)
 
@@ -26,7 +27,7 @@ def get_cancel_button() -> "InlineKeyboardMarkup":
 
 def get_inline_menu(buttons: Dict[str, str]) -> "InlineKeyboardMarkup":
     """
-    Forming inline menu.
+    Инлайн меню.
     """
     keyboard = InlineKeyboardBuilder()
     for item, callback in buttons.items():
@@ -40,7 +41,7 @@ def get_inline_menu(buttons: Dict[str, str]) -> "InlineKeyboardMarkup":
 
 def get_reply_markup(buttons: List[Union[str, int]]) -> "ReplyKeyboardMarkup":
     """
-    Returns reply buttons markup.
+    Разметка на клавиатуре.
     """
     return ReplyKeyboardMarkup(
         keyboard=[[KeyboardButton(text=str(btn)) for btn in buttons]],

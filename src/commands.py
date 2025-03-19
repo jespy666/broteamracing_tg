@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 
 async def set_commands(bot: "Bot") -> None:
     """
-    Set bot context menu commands.
+    Установка команд для бота.
     """
     commands = [
         BotCommand(
@@ -44,4 +44,5 @@ async def set_commands(bot: "Bot") -> None:
             description="5",
         ),
     ]
+
     await bot.set_my_commands(commands)

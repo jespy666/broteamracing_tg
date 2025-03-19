@@ -3,10 +3,12 @@ from aiogram.fsm.state import StatesGroup, State
 
 class NewBookingState(StatesGroup):
     """
-    States for booking create.
+    Состояния для записи на прокат.
     """
 
     date = State()
-    time = State()
-    hours = State()
+    start = State()
+    duration = State()
+    instructor = State()
     bikes = State()
+    confirm = State()

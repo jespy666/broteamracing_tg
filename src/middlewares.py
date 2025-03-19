@@ -1,24 +1,25 @@
-from typing import TYPE_CHECKING, Callable, Dict, Any, Awaitable
-
-import aiohttp
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    Dict,
+    Any,
+    Awaitable,
+)
 
 from aiogram import BaseMiddleware
-from aiogram.types import Message
+from aiogram.types import Message, InaccessibleMessage, CallbackQuery
 
-from src import settings
-from src.utils import exceptions as exc
+from src.api.manager import APIManager
+from src import exceptions as exc
 
 if TYPE_CHECKING:
-    from aiogram.types import CallbackQuery, TelegramObject
+    from aiogram.types import TelegramObject
 
 
 class AccessMiddleware(BaseMiddleware):
     """
-    Middleware checks, if user is authenticated.
+    Middleware для проверки связывания ТГ аккаунта и Веб приложения.
     """
-
-    def __init__(self) -> None:
-        self.counter = 0
 
     async def __call__(
         self,
@@ -26,24 +27,30 @@ class AccessMiddleware(BaseMiddleware):
         event: "TelegramObject",
         data: Dict[str, Any],
     ) -> Any:
-        async with aiohttp.ClientSession() as session:
-            if isinstance(event, Message):
-                message = event
-            elif isinstance(event, CallbackQuery):
-                message = event.message  # type: ignore
-            else:
-                raise TypeError("Non authorized event")
+        if isinstance(event, Message):
+            message = event
+        elif isinstance(event, CallbackQuery):
+            if event.message is None:
+                raise ValueError("CallbackQuery does not contain a message")
+            if isinstance(event.message, InaccessibleMessage):
+                raise ValueError(
+                    "CallbackQuery contains an inaccessible message"
+                )
+            message = event.message
+        else:
+            raise TypeError("Non authorized event")
 
-            user_id: int = message.from_user.id  # type: ignore
-            body = {"tg_id": user_id}
-            response = await session.post(
-                settings.TG_USER_CHECK_URL, json=body
+        if message.from_user is None:
+            raise ValueError(
+                "Message does not have a sender (from_user is None)"
             )
-            match response.status:
-                case 200:
-                    data["user"] = response.json()
-                case 404:
-                    raise exc.APIConnectionError
-                case _:
-                    data["has_access"] = False
+
+        try:
+            api = APIManager()
+            data["has_access"] = await api.check_telegram_id(
+                str(message.from_user.id)
+            )
+        except exc.APIError:
+            data["has_access"] = False
+
         return await handler(event, data)
