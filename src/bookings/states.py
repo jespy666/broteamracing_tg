@@ -10,5 +10,6 @@ class NewBookingState(StatesGroup):
     start = State()
     duration = State()
     instructor = State()
-    bikes = State()
+    bike = State()
+    amount = State()
     confirm = State()

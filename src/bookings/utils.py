@@ -5,10 +5,13 @@ from typing import Dict, Any, List
 
 def validate_date(date: str) -> bool:
     """
-    Валидация даты формата ГГГГ-ММ-ДД.
+    Валидация даты формата ГГГГ-ММ-ДД и проверка, что дата не в прошлом.
     """
+    if len(date) != 10:
+        return False
     try:
-        return datetime.strptime(date, "%Y-%m-%d") >= datetime.today()
+        parsed_date = datetime.strptime(date, "%Y-%m-%d").date()
+        return parsed_date >= datetime.now().date()
     except ValueError:
         return False
 
@@ -48,3 +51,35 @@ def get_available_time_range(starts: List[str], start: str) -> List[int]:
         current_time = next_time
 
     return result
+
+
+def validate_amount(amount: str, max_value: int) -> bool:
+    """
+    Валидация количества байков.
+    """
+    try:
+        return int(amount) <= max_value
+    except ValueError:
+        return False
+
+
+def render_chosen_bikes(bikes: Dict[str, int]) -> str:
+    """
+    Рендер в HTML формат байки, которые уже выбрал клиент.
+    """
+    html_bikes = [
+        f"🔘 <strong>{title}: <em>{amount}шт</em></strong>"
+        for title, amount in bikes.items()
+    ]
+    return "\n\n".join(html_bikes)
+
+
+def get_end_time(start: str, duration: int) -> str:
+    """
+    Получение времени окончания проката.
+    """
+    start_dt = datetime.strptime(start, "%H:%M")
+    return datetime.strftime(
+        (start_dt + timedelta(hours=duration)),
+        "%H:%M",
+    )

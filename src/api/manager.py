@@ -1,5 +1,7 @@
 from contextlib import asynccontextmanager
 
+from datetime import datetime, timedelta
+
 from typing import Union, AsyncGenerator, Any, Dict, List
 
 from aiohttp import ClientSession
@@ -90,7 +92,7 @@ class APIManager(AsyncSession):
     async def load_day_info(
         self,
         date: str,
-        url: str = "/api/v1/get_day_info/",
+        url: str = "/api/v1/day_info/",
     ) -> List[Dict[str, Any]]:
         """
         Загрузка данных по дню.
@@ -106,3 +108,89 @@ class APIManager(AsyncSession):
                         detail=data.get("detail"),
                     )
                 return data
+
+    async def get_available_instructors(
+        self,
+        date: str,
+        start: str,
+        duration: int,
+        url: str = "api/v1/available_instructors",
+    ) -> Dict[str, int]:
+        """
+        Получение доступных инструкторов.
+        """
+        start_dt = datetime.strptime(start, "%H:%M")
+        end = datetime.strftime(
+            (start_dt + timedelta(hours=duration)),
+            "%H:%M",
+        )
+        query_params = f"?date={date}&start={start}&end={end}"
+        async with self.get_session() as session:
+            async with session.get(f"{url}{query_params}") as response:
+                data = await response.json()
+                if not response.status == 200:
+                    raise exc.APIError(
+                        status_code=response.status,
+                        detail=data.get("detail"),
+                    )
+                return data
+
+    async def get_available_bikes(
+        self,
+        date: str,
+        start: str,
+        duration: int,
+        url: str = "api/v1/available_bikes",
+    ) -> Dict[str, int]:
+        """
+        Получение доступных байков.
+        """
+        start_dt = datetime.strptime(start, "%H:%M")
+        end = datetime.strftime(
+            (start_dt + timedelta(hours=duration)),
+            "%H:%M",
+        )
+        query_params = f"?date={date}&start={start}&end={end}"
+        async with self.get_session() as session:
+            async with session.get(f"{url}{query_params}") as response:
+                data = await response.json()
+                if not response.status == 200:
+                    raise exc.APIError(
+                        status_code=response.status,
+                        detail=data.get("detail"),
+                    )
+                return data
+
+    async def make_booking(
+        self,
+        telegram_id: str,
+        date: str,
+        start: str,
+        end: str,
+        duration: int,
+        instructor_id: int,
+        bikes: Dict[str, int],
+        is_side_booking=False,
+        url: str = "api/v1/new_booking/",
+    ) -> None:
+        """
+        Создание записи на прокат.
+        """
+        payload = {
+            "telegram_id": telegram_id,
+            "date": date,
+            "start": start,
+            "end": end,
+            "duration": duration,
+            "instructor_id": instructor_id,
+            "bikes": bikes,
+            "is_side_booking": is_side_booking,
+        }
+        async with self.get_session() as session:
+            async with session.post(url, data=payload) as response:
+                data = await response.json()
+                if not response.status == 200:
+                    raise exc.APIError(
+                        status_code=response.status,
+                        detail=data.get("detail"),
+                    )

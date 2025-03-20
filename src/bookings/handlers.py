@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, TypeVar, Union, Dict, Any, List
+from typing import TYPE_CHECKING, TypeVar, Union, Dict, Any, List, Optional
 
 from aiogram import Router, F
 from aiogram.filters import Command
@@ -38,6 +38,7 @@ async def start_booking(
         markup: "InlineKeyboardMarkup" = get_inline_menu(
             {"Привязать аккаунт": "link-account"}
         )
+        await state.clear()
     else:
         markup: "InlineKeyboardMarkup" = get_cancel_button()
         msg = read_template("booking_create/date")
@@ -57,6 +58,7 @@ async def ask_start(message: Message, state: "FSMContext") -> None:
         markup: "InlineKeyboardMarkup" = get_cancel_button()
         await message.answer(msg, reply_markup=markup, parse_mode="HTML")
         await state.set_state(await state.get_state())
+        return
 
     api = APIManager()
     day_info: List[Dict[str, Any]] = await api.load_day_info(date)
@@ -64,7 +66,7 @@ async def ask_start(message: Message, state: "FSMContext") -> None:
 
     msg = read_template("booking_create/start")
     markup: "ReplyKeyboardMarkup" = get_reply_markup(starts)
-    await state.update_data(day_info=day_info, starts=starts)
+    await state.update_data(day_info=day_info, starts=starts, date=date)
     await message.answer(msg, reply_markup=markup, parse_mode="HTML")
     await state.set_state(NewBookingState.start)
 
@@ -81,6 +83,7 @@ async def ask_duration(message: "Message", state: "FSMContext") -> None:
         markup: "ReplyKeyboardMarkup" = get_reply_markup(data["starts"])
         await message.answer(msg, reply_markup=markup, parse_mode="HTML")
         await state.set_state(await state.get_state())
+        return
 
     available_hours: List[int] = utils.get_available_time_range(
         data["starts"],
@@ -89,5 +92,176 @@ async def ask_duration(message: "Message", state: "FSMContext") -> None:
     markup: "ReplyKeyboardMarkup" = get_reply_markup(available_hours)
     msg = read_template("booking_create/duration")
     await message.answer(msg, reply_markup=markup, parse_mode="HTML")
-    await state.update_data(durations=available_hours)
+    await state.update_data(durations=available_hours, start=start)
     await state.set_state(NewBookingState.duration)
+
+
+@booking_router.message(NewBookingState.duration)
+async def ask_instructor(message: "Message", state: "FSMContext") -> None:
+    """
+    Состояние 4. Запрос инструктора.
+    """
+    duration: str = message.text
+    data: Dict[str, Any] = await state.get_data()
+    if int(duration) not in data["durations"]:
+        msg = read_template("errors/wrong_duration")
+        markup: "ReplyKeyboardMarkup" = get_reply_markup(data["durations"])
+        await message.answer(msg, reply_markup=markup, parse_mode="HTML")
+        await state.set_state(await state.get_state())
+        return
+
+    api = APIManager()
+    instructors: Dict[str, int] = await api.get_available_instructors(
+        data["date"],
+        data["start"],
+        int(duration),
+    )
+    msg = read_template("booking_create/instructor")
+    markup: "ReplyKeyboardMarkup" = get_reply_markup(list(instructors.keys()))
+    await message.answer(msg, reply_markup=markup, parse_mode="HTML")
+    await state.update_data(instructors=instructors, duration=int(duration))
+    await state.set_state(NewBookingState.instructor)
+
+
+@booking_router.message(NewBookingState.instructor)
+async def ask_bikes(message: "Message", state: "FSMContext") -> None:
+    """
+    Состояние 5. Запрос байков.
+    """
+    instructor: str = message.text
+    data: Dict[str, Any] = await state.get_data()
+    if instructor not in list(data["instructors"].keys()):
+        msg = read_template("errors/instructor")
+        markup: "ReplyKeyboardMarkup" = get_reply_markup(
+            list(data["instructors"].keys())
+        )
+        await message.answer(msg, reply_markup=markup, parse_mode="HTML")
+        await state.set_state(await state.get_state())
+        return
+
+    api = APIManager()
+    available_bikes: Dict[str, int] = await api.get_available_bikes(
+        data["date"],
+        data["start"],
+        data["duration"],
+    )
+    msg = read_template("booking_create/bikes1")
+    markup: "ReplyKeyboardMarkup" = get_reply_markup(
+        list(available_bikes.keys())
+    )
+    await message.answer(msg, reply_markup=markup, parse_mode="HTML")
+    await state.update_data(
+        available_bikes=available_bikes,
+        instructor=data["instructors"][instructor],
+    )
+    await state.set_state(NewBookingState.bike)
+
+
+@booking_router.message(NewBookingState.bike)
+async def ask_amount(message: "Message", state: "FSMContext") -> None:
+    """
+    Состояние 6. Запрос количества байков.
+    """
+    bike: str = message.text
+    data: Dict[str, Any] = await state.get_data()
+    if not bike in data["available_bikes"].keys():
+        msg: str = read_template("errors/wrong_duration")
+        markup: "ReplyKeyboardMarkup" = get_reply_markup(
+            list(data["available_bikes"].keys())
+        )
+        await message.answer(msg, reply_markup=markup, parse_mode="HTML")
+        await state.set_state(await state.get_state())
+        return
+
+    msg: str = read_template("booking_create/amount")
+    markup: "ReplyKeyboardMarkup" = get_reply_markup(
+        list(range(1, data["available_bikes"][bike] + 1))
+    )
+    await message.answer(msg, reply_markup=markup, parse_mode="HTML")
+    await state.update_data(bike=bike)
+    await state.set_state(NewBookingState.amount)
+
+
+@booking_router.message(NewBookingState.amount)
+async def checkout_bikes(message: "Message", state: "FSMContext") -> None:
+    """
+    Состояние 7. Проверка количества.
+    """
+    amount: str = message.text
+    data: Dict[str, Any] = await state.get_data()
+    available_bikes: Dict[str, int] = data["available_bikes"]
+    bike: str = data["bike"]
+    if not utils.validate_amount(amount, available_bikes[bike]):
+        msg: str = read_template("errors/wrong_amount")
+        markup: "ReplyKeyboardMarkup" = get_reply_markup(
+            list(range(data["available_bikes"][data["bike"]]))
+        )
+        await message.answer(msg, reply_markup=markup, parse_mode="HTML")
+        await state.set_state(await state.get_state())
+        return
+
+    # Проверяем выбранные байки
+    # Если таких нет, то устанавливаем выбранный байк
+    if not data.get("bikes"):
+        bikes = {bike: amount}
+    else:
+        bikes = data["bikes"].update({bike: amount})
+
+    # Удаляем байк из доступных
+    for key in bikes:
+        available_bikes.pop(key, None)
+
+    msg: str = read_template(
+        "booking_create/bikes2",
+        bikes=utils.render_chosen_bikes(bikes),
+    )
+    markup: "ReplyKeyboardMarkup" = get_reply_markup(
+        ["Завершить", "Выбрать еще байк"]
+    )
+    await message.answer(msg, reply_markup=markup, parse_mode="HTML")
+    await state.update_data(
+        bike=None,
+        available_bikes=available_bikes,
+        bikes=bikes,
+    )
+    await state.set_state(NewBookingState.confirm)
+
+
+@booking_router.message(NewBookingState.confirm)
+async def confirm(message: "Message", state: "FSMContext") -> None:
+    """
+    Состояние 7. Создание записи или выбор еще байков.
+    """
+    action: str = message.text
+    actions = ["Завершить", "Выбрать еще байк"]
+    data: Dict[str, Any] = await state.get_data()
+    match action:
+        case "Завершить":
+            api = APIManager()
+            await api.make_booking(
+                telegram_id=str(message.from_user.id),
+                date=data["date"],
+                start=data["start"],
+                duration=data["duration"],
+                end=utils.get_end_time(data["start"], int(data["duration"])),
+                instructor_id=data["instructor"],
+                bikes=data["bikes"],
+                is_side_booking=False,
+            )
+            msg: str = read_template("booking_create/done")
+            await message.answer(msg, parse_mode="HTML")
+            await state.clear()
+        case "Выбрать еще байк":
+            msg: str = read_template("booking_create/bikes_repeat")
+            markup: "ReplyKeyboardMarkup" = get_reply_markup(
+                list(data["available_bikes"].keys())
+            )
+            await message.answer(msg, reply_markup=markup, parse_mode="HTML")
+            await state.set_state(NewBookingState.bike)
+            return
+        case _:
+            msg: str = read_template("errors/wrong_action")
+            markup: "ReplyKeyboardMarkup" = get_reply_markup(actions)
+            await message.answer(msg, reply_markup=markup, parse_mode="HTML")
+            await state.set_state(await state.get_state())
+            return

@@ -1,4 +1,0 @@
-<em><strong>Вы выбрали ↙️</strong>
-
-{bikes}
-</em>
