@@ -200,12 +200,9 @@ async def checkout_bikes(message: "Message", state: "FSMContext") -> None:
         await state.set_state(await state.get_state())
         return
 
-    # Проверяем выбранные байки
-    # Если таких нет, то устанавливаем выбранный байк
-    if not data.get("bikes"):
-        bikes = {bike: amount}
-    else:
-        bikes = data["bikes"].update({bike: amount})
+    # Обновляем выбранные байки
+    bikes: Optional[Dict[str, int]] = data.get("bikes", {})
+    bikes[bike] = int(amount)
 
     # Удаляем байк из доступных
     for key in bikes:
