@@ -62,7 +62,7 @@ async def ask_booking_id(
     api = APIManager()
     bookings: List[Dict[str, str]] = await api.get_bookings_to_accept()
     msg = read_template(
-        "staff/accept_booking_id",
+        "staff/accept/booking_id",
         bookings=utils.render_bookings_to_accept(bookings),
     )
     markup: "ReplyKeyboardMarkup" = get_reply_markup(
@@ -81,7 +81,7 @@ async def ask_bike(message: Message, state: "FSMContext") -> None:
     booking_id: str = message.text
     data: Dict[str, Any] = await state.get_data()
     if not validate_booking_id(booking_id, data["bookings"]):
-        msg: str = read_template("staff/wrong_booking_id")
+        msg: str = read_template("staff/accept/wrong_booking_id")
         markup: "ReplyKeyboardMarkup" = get_reply_markup(
             [booking["id"] for booking in data["bookings"]]
         )
@@ -98,7 +98,7 @@ async def ask_bike(message: Message, state: "FSMContext") -> None:
         start=booking["start"],
         duration=int(booking["duration"]),
     )
-    msg: str = read_template("staff/bike")
+    msg: str = read_template("staff/accept/bike")
     markup: "ReplyKeyboardMarkup" = get_reply_markup(
         list(available_bikes.keys())
     )
@@ -115,7 +115,7 @@ async def accept_booking(message: Message, state: "FSMContext") -> None:
     bike: str = message.text
     data: Dict[str, Any] = await state.get_data()
     if bike not in data["available_bikes"].keys():
-        msg: str = read_template("staff/wrong_bike")
+        msg: str = read_template("staff/accept/wrong_bike")
         markup: "ReplyKeyboardMarkup" = get_reply_markup(
             list(data["available_bikes"].keys())
         )
@@ -129,6 +129,6 @@ async def accept_booking(message: Message, state: "FSMContext") -> None:
         data["instructor_id"],
         data["available_bikes"][bike],
     )
-    msg: str = read_template("staff/accept_done")
+    msg: str = read_template("staff/accept/done")
     await message.answer(msg, parse_mode="HTML")
     await state.clear()
