@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 
 from datetime import datetime, timedelta
 
-from typing import Union, AsyncGenerator, Any, Dict, List
+from typing import Union, AsyncGenerator, Any, Dict, List, Optional
 
 from aiohttp import ClientSession
 
@@ -42,7 +42,7 @@ class APIManager(AsyncSession):
         self,
         user_id: int,
         telegram_id: Union[str, int],
-        url: str = "/api/v1/set_telegram_id/",
+        url: str = "/api/v1/set/telegram_id/",
     ) -> None:
         """
         Установка Telegram ID пользователю на сайт, что-бы получать уведомления.
@@ -62,7 +62,7 @@ class APIManager(AsyncSession):
     async def check_telegram_id(
         self,
         telegram_id: str,
-        url: str = "/api/v1/check_tg_id/",
+        url: str = "/api/v1/check/telegram_id",
     ) -> bool:
         """
         Проверка, что пользователь привязан к ТГ.
@@ -75,7 +75,7 @@ class APIManager(AsyncSession):
     async def enable_notifications(
         self,
         telegram_id: str,
-        url: str = "/api/v1/enable_tg_notifications/",
+        url: str = "/api/v1/notifications/tg/enable/",
     ) -> None:
         """
         Включение уведомлений в Телеграм.
@@ -114,7 +114,7 @@ class APIManager(AsyncSession):
         date: str,
         start: str,
         duration: int,
-        url: str = "api/v1/available_instructors",
+        url: str = "api/v1/instructors/available",
     ) -> Dict[str, int]:
         """
         Получение доступных инструкторов.
@@ -140,7 +140,7 @@ class APIManager(AsyncSession):
         date: str,
         start: str,
         duration: int,
-        url: str = "api/v1/available_bikes",
+        url: str = "api/v1/bikes/available",
     ) -> Dict[str, int]:
         """
         Получение доступных байков.
@@ -171,7 +171,7 @@ class APIManager(AsyncSession):
         instructor_id: int,
         bikes: Dict[str, int],
         is_side_booking=False,
-        url: str = "api/v1/new_booking/",
+        url: str = "api/v1/bookings/",
     ) -> None:
         """
         Создание записи на прокат.
@@ -198,7 +198,7 @@ class APIManager(AsyncSession):
     async def get_user_active_bookings(
         self,
         telegram_id: str,
-        url: str = "api/v1/active_bookings",
+        url: str = "api/v1/bookings/active",
     ) -> List[Dict[str, Any]]:
         """
         Получение всех активных (предстоящих) записей на прокат клиента.
@@ -217,7 +217,7 @@ class APIManager(AsyncSession):
     async def cancel_booking(
         self,
         booking_id: int,
-        url: str = "api/v1/cancel_booking/",
+        url: str = "api/v1/bookings/cancel/",
     ) -> None:
         """
         Отмена записи на прокат.
@@ -232,21 +232,63 @@ class APIManager(AsyncSession):
                         detail=data.get("detail"),
                     )
 
-    async def check_is_staff(
+    async def get_instructor_id(
         self,
         telegram_id: str,
-        url: str = "api/v1/check_staff",
-    ) -> bool:
+        url: str = "api/v1/staff/check",
+    ) -> int:
         """
-        Проверка прав персонала.
+        Проверка прав персонала и получение связанного instructor_id.
         """
         request_params = f"?telegram_id={telegram_id}"
         async with self.get_session() as session:
             async with session.get(f"{url}{request_params}") as response:
+                data = await response.json()
+                instructor_id: int = data.get("instructor_id")
+                if not response.status == 200 or not instructor_id:
+                    raise exc.APIError(
+                        status_code=response.status,
+                        detail=data.get("detail"),
+                    )
+                return instructor_id
+
+    async def get_bookings_to_accept(
+        self,
+        url: str = "api/v1/staff/bookings/list/accept/",
+    ) -> List[Dict[str, Union[str, int]]]:
+        """
+        Получение списка прокатов для взятия их в работу.
+        """
+        async with self.get_session() as session:
+            async with session.get(url) as response:
                 data = await response.json()
                 if not response.status == 200:
                     raise exc.APIError(
                         status_code=response.status,
                         detail=data.get("detail"),
                     )
-                return True
+                return data
+
+    async def accept_booking(
+        self,
+        booking_id: int,
+        instructor_id: int,
+        bike_id: int,
+        url: str = "api/v1/staff/bookings/accept/",
+    ) -> None:
+        """
+        Взять в работу прокат.
+        """
+        payload = {
+            "booking_id": booking_id,
+            "instructor_id": instructor_id,
+            "bike_id": bike_id,
+        }
+        async with self.get_session() as session:
+            async with session.post(url, data=payload) as response:
+                data = await response.json()
+                if not response.status == 200:
+                    raise exc.APIError(
+                        status_code=response.status,
+                        detail=data.get("detail"),
+                    )

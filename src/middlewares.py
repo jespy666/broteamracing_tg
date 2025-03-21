@@ -4,10 +4,11 @@ from typing import (
     Dict,
     Any,
     Awaitable,
+    Union,
 )
 
 from aiogram import BaseMiddleware
-from aiogram.types import Message, InaccessibleMessage, CallbackQuery
+from aiogram.types import Message, CallbackQuery
 
 from src.api.manager import APIManager
 from src import exceptions as exc
@@ -27,29 +28,13 @@ class AuthMiddleware(BaseMiddleware):
         event: "TelegramObject",
         data: Dict[str, Any],
     ) -> Any:
-        if isinstance(event, Message):
-            message = event
-        elif isinstance(event, CallbackQuery):
-            if event.message is None:
-                raise ValueError("CallbackQuery does not contain a message")
-            if isinstance(event.message, InaccessibleMessage):
-                raise ValueError(
-                    "CallbackQuery contains an inaccessible message"
-                )
-            message = event.message
-        else:
-            raise TypeError("Non authorized event")
+        if not isinstance(event, Union[Message, CallbackQuery]):
+            raise TypeError("Не поддерживаемый тип события")
 
-        if message.from_user is None:
-            raise ValueError(
-                "Message does not have a sender (from_user is None)"
-            )
-
+        user_id = str(event.from_user.id)
         try:
             api = APIManager()
-            data["is_authenticated"] = await api.check_telegram_id(
-                str(message.from_user.id)
-            )
+            data["is_authenticated"] = await api.check_telegram_id(user_id)
         except exc.APIError:
             data["is_authenticated"] = False
 
@@ -67,30 +52,14 @@ class StaffMiddleware(BaseMiddleware):
         event: "TelegramObject",
         data: Dict[str, Any],
     ) -> Any:
-        if isinstance(event, Message):
-            message = event
-        elif isinstance(event, CallbackQuery):
-            if event.message is None:
-                raise ValueError("CallbackQuery does not contain a message")
-            if isinstance(event.message, InaccessibleMessage):
-                raise ValueError(
-                    "CallbackQuery contains an inaccessible message"
-                )
-            message = event.message
-        else:
-            raise TypeError("Non authorized event")
+        if not isinstance(event, Union[Message, CallbackQuery]):
+            raise TypeError("Не поддерживаемый тип события")
 
-        if message.from_user is None:
-            raise ValueError(
-                "Message does not have a sender (from_user is None)"
-            )
-
+        user_id: int = event.from_user.id
         try:
             api = APIManager()
-            data["is_staff"] = await api.check_is_staff(
-                str(message.from_user.id)
-            )
+            data["instructor_id"] = await api.get_instructor_id(str(user_id))
         except exc.APIError:
-            data["is_staff"] = False
+            data["instructor_id"] = False
 
         return await handler(event, data)
