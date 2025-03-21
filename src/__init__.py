@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from .routes import simple_router, booking_router
+from .routes import simple_router, booking_router, staff_router
 from .commands import set_commands
 
 if TYPE_CHECKING:
@@ -14,6 +14,7 @@ def register_routes(dp: "Dispatcher") -> None:
 
     dp.include_router(simple_router)
     dp.include_router(booking_router)
+    dp.include_router(staff_router)
 
 
 __all__ = ("register_routes", "set_commands")

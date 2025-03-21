@@ -1,0 +1,3 @@
+<strong>✍️ Выберите прокат</strong>
+
+{bookings}
