@@ -13,3 +13,11 @@ class NewBookingState(StatesGroup):
     bike = State()
     amount = State()
     confirm = State()
+
+
+class CancelBookingState(StatesGroup):
+    """
+    Состояние для отмены записи на прокат.
+    """
+
+    confirm_booking_id = State()

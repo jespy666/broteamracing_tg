@@ -6,7 +6,7 @@ from aiogram.types import Message, CallbackQuery
 
 from src.utils import read_template
 from src.keyboards import get_inline_menu, get_cancel_button, get_reply_markup
-from src.bookings.states import NewBookingState
+from src.bookings.states import NewBookingState, CancelBookingState
 from src.middlewares import AccessMiddleware
 from src.bookings import utils
 from src.api.manager import APIManager
@@ -262,3 +262,62 @@ async def confirm(message: "Message", state: "FSMContext") -> None:
             await message.answer(msg, reply_markup=markup, parse_mode="HTML")
             await state.set_state(await state.get_state())
             return
+
+
+@booking_router.message(Command("cancel"))
+@booking_router.callback_query(F.data == "cancel")
+async def start_booking(
+    event: E,
+    state: "FSMContext",
+    has_access: bool,
+) -> None:
+    """
+    Состояние 1. Отмена записи. Показ всех предстоящих записей.
+    """
+    message = event if isinstance(event, Message) else event.message
+    if not has_access:
+        msg = read_template("errors/access")
+        markup: "InlineKeyboardMarkup" = get_inline_menu(
+            {"Привязать аккаунт": "link-account"}
+        )
+        await message.answer(msg, reply_markup=markup, parse_mode="HTML")
+        await state.clear()
+    else:
+        api = APIManager()
+        bookings: List[Dict[str, Union[str, int]]] = (
+            await api.get_user_active_bookings(str(message.from_user.id))
+        )
+
+        markup: "ReplyKeyboardMarkup" = get_reply_markup(
+            [booking["id"] for booking in bookings]
+        )
+        msg = read_template(
+            "booking_cancel/list",
+            bookings=utils.render_bookings(bookings),
+        )
+        await message.answer(msg, reply_markup=markup, parse_mode="HTML")
+        await state.update_data(bookings=bookings)
+        await state.set_state(CancelBookingState.confirm_booking_id)
+
+
+@booking_router.message(CancelBookingState.confirm_booking_id)
+async def cancel_booking(message: "Message", state: "FSMContext") -> None:
+    """
+    Состояние 2. Проверка ID записи и ее отмена.
+    """
+    booking_id: str = message.text
+    data: Dict[str, Any] = await state.get_data()
+    if not utils.validate_booking_id(booking_id, data["bookings"]):
+        msg: str = read_template("booking_cancel/wrong_id")
+        markup: "ReplyKeyboardMarkup" = get_reply_markup(
+            [booking["id"] for booking in data["bookings"]]
+        )
+        await message.answer(msg, reply_markup=markup, parse_mode="HTML")
+        await state.set_state(await state.get_state())
+        return
+
+    api = APIManager()
+    await api.cancel_booking(int(booking_id))
+    msg: str = read_template("booking_cancel/done")
+    await message.answer(msg, parse_mode="HTML")
+    await state.clear()

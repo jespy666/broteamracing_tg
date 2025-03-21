@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Union
 
 
 def validate_date(date: str) -> bool:
@@ -74,6 +74,20 @@ def render_chosen_bikes(bikes: Dict[str, int]) -> str:
     return "\n\n".join(html_bikes)
 
 
+def render_bookings(bookings: List[Dict[str, Union[str, int]]]) -> str:
+    """
+    Рендер в HTML список записей на прокат.
+    """
+    html_bookings = [
+        (
+            f"🔘 <strong>{booking["id"]}</strong>: <em>{booking["date"]} |"
+            f" {booking["start"]} - {booking["end"]}</em>"
+        )
+        for booking in bookings
+    ]
+    return "\n\n".join(html_bookings)
+
+
 def get_end_time(start: str, duration: int) -> str:
     """
     Получение времени окончания проката.
@@ -83,3 +97,16 @@ def get_end_time(start: str, duration: int) -> str:
         (start_dt + timedelta(hours=duration)),
         "%H:%M",
     )
+
+
+def validate_booking_id(
+    booking_id: str,
+    bookings: List[Dict[str, Union[str, int]]],
+) -> bool:
+    """
+    Валидация Типа booking_id и ее вхождение в список записей.
+    """
+    try:
+        return int(booking_id) in [booking["id"] for booking in bookings]
+    except ValueError:
+        return False

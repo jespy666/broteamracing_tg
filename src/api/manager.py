@@ -194,3 +194,40 @@ class APIManager(AsyncSession):
                         status_code=response.status,
                         detail=data.get("detail"),
                     )
+
+    async def get_user_active_bookings(
+        self,
+        telegram_id: str,
+        url: str = "api/v1/active_bookings",
+    ) -> List[Dict[str, Any]]:
+        """
+        Получение всех активных (предстоящих) записей на прокат клиента.
+        """
+        request_params = f"?telegram_id={telegram_id}"
+        async with self.get_session() as session:
+            async with session.get(f"{url}{request_params}") as response:
+                data = await response.json()
+                if not response.status == 200:
+                    raise exc.APIError(
+                        status_code=response.status,
+                        detail=data.get("detail"),
+                    )
+                return data
+
+    async def cancel_booking(
+        self,
+        booking_id: int,
+        url: str = "api/v1/cancel_booking/",
+    ) -> None:
+        """
+        Отмена записи на прокат.
+        """
+        payload = {"booking_id": booking_id}
+        async with self.get_session() as session:
+            async with session.post(url, data=payload) as response:
+                data = await response.json()
+                if not response.status == 200:
+                    raise exc.APIError(
+                        status_code=response.status,
+                        detail=data.get("detail"),
+                    )
