@@ -255,12 +255,16 @@ class APIManager(AsyncSession):
     async def get_bookings(
         self,
         booking_status: Literal["confirmed", "pending"],
-        url: str = "api/v1/staff/bookings/list/accept",
+        instructor_id: int = None,
+        url: str = "api/v1/staff/bookings/list/",
     ) -> List[Dict[str, Union[str, int]]]:
         """
         Получение списка прокатов для взятия их в работу.
         """
         query_params = f"?booking_status={booking_status}"
+        if instructor_id:
+            query_params += f"&instructor_id={instructor_id}"
+
         async with self.get_session() as session:
             async with session.get(f"{url}{query_params}") as response:
                 data = await response.json()
@@ -277,7 +281,7 @@ class APIManager(AsyncSession):
         instructor_id: int,
         bike_id: int,
         url: str = "api/v1/staff/bookings/accept/",
-    ) -> None:
+    ) -> bool:
         """
         Взять в работу прокат.
         """
@@ -289,17 +293,20 @@ class APIManager(AsyncSession):
         async with self.get_session() as session:
             async with session.post(url, data=payload) as response:
                 data = await response.json()
-                if not response.status == 200:
+                if response.status == 409:
+                    return False
+                if not response.status in [200, 409]:
                     raise exc.APIError(
                         status_code=response.status,
                         detail=data.get("detail"),
                     )
+                return True
 
     async def decline_booking(
         self,
         booking_id: int,
         telegram_id: str,
-        url: str = "api/v1/bookings/decline/",
+        url: str = "api/v1/staff/bookings/decline/",
     ) -> None:
         """
         Отказ от проведения проката.

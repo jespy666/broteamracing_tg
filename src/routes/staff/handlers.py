@@ -124,11 +124,19 @@ async def accept_booking(message: Message, state: "FSMContext") -> None:
         return
 
     api = APIManager()
-    await api.accept_booking(
+    if not await api.accept_booking(
         int(data["booking"]["id"]),
         data["instructor_id"],
         data["available_bikes"][bike],
-    )
+    ):
+        msg: str = read_template("staff/accept/overbooking")
+        markup: "ReplyKeyboardMarkup" = get_reply_markup(
+            [booking["id"] for booking in data["bookings"]]
+        )
+        await message.answer(msg, reply_markup=markup, parse_mode="HTML")
+        await state.set_state(AcceptBookingState.booking)
+        return
+
     msg: str = read_template("staff/accept/done")
     await message.answer(msg, parse_mode="HTML")
     await state.clear()
@@ -152,7 +160,10 @@ async def ask_booking_id(
         return
 
     api = APIManager()
-    bookings: List[Dict[str, str]] = await api.get_bookings("confirmed")
+    bookings: List[Dict[str, str]] = await api.get_bookings(
+        "confirmed",
+        instructor_id=instructor_id,
+    )
     msg: str = read_template(
         "staff/decline/booking_id",
         bookings=utils.render_bookings(bookings),
