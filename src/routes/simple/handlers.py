@@ -27,6 +27,7 @@ async def enable_updates(message: Message, command: CommandObject) -> None:
 
         telegram_id: Union[str, int] = message.from_user.id
         api = APIManager()
+
         # Проверка на привязку Телеграм аккаунта
         if not await api.check_telegram_id(user_id):
             await api.set_telegram_id(user_id, telegram_id)

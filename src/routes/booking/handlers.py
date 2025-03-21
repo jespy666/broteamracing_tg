@@ -6,9 +6,9 @@ from aiogram.types import Message, CallbackQuery
 
 from src.utils import read_template
 from src.keyboards import get_inline_menu, get_cancel_button, get_reply_markup
-from src.bookings.states import NewBookingState, CancelBookingState
+from src.routes.booking.states import NewBookingState, CancelBookingState
 from src.middlewares import AuthMiddleware
-from src.bookings import utils
+from src.routes.booking import utils
 from src.api.manager import APIManager
 
 if TYPE_CHECKING:
@@ -27,13 +27,13 @@ E = TypeVar("E", bound=Union[Message, CallbackQuery])
 async def start_booking(
     event: E,
     state: "FSMContext",
-    has_access: bool,
+    is_authenticated: bool,
 ) -> None:
     """
     Состояние 1. Начало записи. Запрос Даты.
     """
     message = event if isinstance(event, Message) else event.message
-    if not has_access:
+    if not is_authenticated:
         msg = read_template("errors/access")
         markup: "InlineKeyboardMarkup" = get_inline_menu(
             {"Привязать аккаунт": "link-account"}

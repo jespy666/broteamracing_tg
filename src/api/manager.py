@@ -231,3 +231,22 @@ class APIManager(AsyncSession):
                         status_code=response.status,
                         detail=data.get("detail"),
                     )
+
+    async def check_is_staff(
+        self,
+        telegram_id: str,
+        url: str = "api/v1/check_staff",
+    ) -> bool:
+        """
+        Проверка прав персонала.
+        """
+        request_params = f"?telegram_id={telegram_id}"
+        async with self.get_session() as session:
+            async with session.get(f"{url}{request_params}") as response:
+                data = await response.json()
+                if not response.status == 200:
+                    raise exc.APIError(
+                        status_code=response.status,
+                        detail=data.get("detail"),
+                    )
+                return True

@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING
 
-from .simples.handlers import simple_router
-from .bookings.handlers import booking_router
+from .routes import simple_router, booking_router
 from .commands import set_commands
 
 if TYPE_CHECKING:
