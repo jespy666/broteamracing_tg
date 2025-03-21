@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 
 from datetime import datetime, timedelta
 
-from typing import Union, AsyncGenerator, Any, Dict, List, Optional
+from typing import Union, AsyncGenerator, Any, Dict, List, Optional, Literal
 
 from aiohttp import ClientSession
 
@@ -252,15 +252,17 @@ class APIManager(AsyncSession):
                     )
                 return instructor_id
 
-    async def get_bookings_to_accept(
+    async def get_bookings(
         self,
-        url: str = "api/v1/staff/bookings/list/accept/",
+        booking_status: Literal["confirmed", "pending"],
+        url: str = "api/v1/staff/bookings/list/accept",
     ) -> List[Dict[str, Union[str, int]]]:
         """
         Получение списка прокатов для взятия их в работу.
         """
+        query_params = f"?booking_status={booking_status}"
         async with self.get_session() as session:
-            async with session.get(url) as response:
+            async with session.get(f"{url}{query_params}") as response:
                 data = await response.json()
                 if not response.status == 200:
                     raise exc.APIError(
@@ -283,6 +285,28 @@ class APIManager(AsyncSession):
             "booking_id": booking_id,
             "instructor_id": instructor_id,
             "bike_id": bike_id,
+        }
+        async with self.get_session() as session:
+            async with session.post(url, data=payload) as response:
+                data = await response.json()
+                if not response.status == 200:
+                    raise exc.APIError(
+                        status_code=response.status,
+                        detail=data.get("detail"),
+                    )
+
+    async def decline_booking(
+        self,
+        booking_id: int,
+        telegram_id: str,
+        url: str = "api/v1/bookings/decline/",
+    ) -> None:
+        """
+        Отказ от проведения проката.
+        """
+        payload = {
+            "booking_id": booking_id,
+            "telegram_id": telegram_id,
         }
         async with self.get_session() as session:
             async with session.post(url, data=payload) as response:

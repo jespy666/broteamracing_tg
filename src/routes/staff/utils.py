@@ -7,9 +7,9 @@ MENU = {
 }
 
 
-def render_bookings_to_accept(bookings: List[Dict[str, str]]) -> str:
+def render_bookings(bookings: List[Dict[str, str]]) -> str:
     """
-    Рендер в HTML списка прокатов для взятия в работу.
+    Рендер в HTML списка прокатов.
     """
     html_bookings = [
         (
