@@ -198,3 +198,32 @@ async def decline_booking(message: Message, state: "FSMContext") -> None:
     msg: str = read_template("staff/decline/done")
     await message.answer(msg, parse_mode="HTML")
     await state.clear()
+
+
+@staff_router.message(Command("staff_show"))
+@staff_router.callback_query(F.data == "staff_show")
+async def show_bookings(
+    event: E,
+    state: "FSMContext",
+    instructor_id: Union[int, bool],
+) -> None:
+    """
+    Обработчик для отображения всех предстоящих прокатов инструктора.
+    """
+    message = event if isinstance(event, Message) else event.message
+    if not instructor_id:
+        msg: str = read_template("staff/restricted")
+        await message.answer(msg, parse_mode="HTML")
+        return
+
+    api = APIManager()
+    bookings: List[Dict[str, Union[str, int]]] = await api.get_bookings(
+        "confirmed",
+        instructor_id=instructor_id,
+    )
+    msg: str = read_template(
+        "staff/bookings",
+        bookings=utils.render_bookings(bookings),
+    )
+    markup: "InlineKeyboardMarkup" = get_inline_menu(utils.MENU)
+    await message.answer(msg, reply_markup=markup, parse_mode="HTML")
