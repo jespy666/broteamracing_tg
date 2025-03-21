@@ -7,7 +7,7 @@ from aiogram.types import Message, CallbackQuery
 from src.utils import read_template
 from src.keyboards import get_inline_menu, get_cancel_button, get_reply_markup
 from src.bookings.states import NewBookingState, CancelBookingState
-from src.middlewares import AccessMiddleware
+from src.middlewares import AuthMiddleware
 from src.bookings import utils
 from src.api.manager import APIManager
 
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 
 booking_router = Router()
-booking_router.message.middleware(AccessMiddleware())
+booking_router.message.middleware(AuthMiddleware())
 
 E = TypeVar("E", bound=Union[Message, CallbackQuery])
 

@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from aiogram.types import TelegramObject
 
 
-class AccessMiddleware(BaseMiddleware):
+class AuthMiddleware(BaseMiddleware):
     """
     Middleware для проверки связывания ТГ аккаунта и Веб приложения.
     """
