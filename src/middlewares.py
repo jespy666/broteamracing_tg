@@ -63,3 +63,27 @@ class StaffMiddleware(BaseMiddleware):
             data["instructor_id"] = False
 
         return await handler(event, data)
+
+
+class AdminMiddleware(BaseMiddleware):
+    """
+    Middleware для проверки доступа администратора.
+    """
+
+    async def __call__(
+        self,
+        handler: Callable[["TelegramObject", Dict[str, Any]], Awaitable[Any]],
+        event: "TelegramObject",
+        data: Dict[str, Any],
+    ) -> Any:
+        if not isinstance(event, Union[Message, CallbackQuery]):
+            raise TypeError("Не поддерживаемый тип события")
+
+        user_id: int = event.from_user.id
+        try:
+            api = APIManager()
+            data["is_admin"] = await api.check_admin(str(user_id))
+        except exc.APIError:
+            data["is_admin"] = False
+
+        return await handler(event, data)
