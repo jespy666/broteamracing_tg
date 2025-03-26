@@ -2,6 +2,9 @@ bot:
 	python3 -m src.bot
 
 lint:
+	ruff check ./src
+
+lint-fix:
 	ruff check ./src --fix
 
 install:

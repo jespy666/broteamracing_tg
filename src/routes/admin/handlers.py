@@ -102,7 +102,7 @@ async def ask_duration(message: Message, state: "FSMContext") -> None:
     """
     start: str = message.text
     data: Dict[str, Any] = await state.get_data()
-    if not start in data["starts"]:
+    if start not in data["starts"]:
         msg = read_template("errors/wrong_time")
         markup: "ReplyKeyboardMarkup" = get_reply_markup(data["starts"])
         await message.answer(msg, reply_markup=markup, parse_mode="HTML")
@@ -207,7 +207,7 @@ async def ask_amount(message: Message, state: "FSMContext") -> None:
     """
     bike: str = message.text
     data: Dict[str, Any] = await state.get_data()
-    if not bike in data["available_bikes"].keys():
+    if bike not in data["available_bikes"].keys():
         msg: str = read_template("errors/wrong_duration")
         markup: "ReplyKeyboardMarkup" = get_reply_markup(
             list(data["available_bikes"].keys())

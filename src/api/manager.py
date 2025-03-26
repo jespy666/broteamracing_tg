@@ -297,7 +297,7 @@ class APIManager(AsyncSession):
                 data = await response.json()
                 if response.status == 409:
                     return False
-                if not response.status in [200, 409]:
+                if response.status not in [200, 409]:
                     raise exc.APIError(
                         status_code=response.status,
                         detail=data.get("detail"),

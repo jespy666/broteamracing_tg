@@ -144,7 +144,7 @@ async def accept_booking(message: Message, state: "FSMContext") -> None:
 
 @staff_router.message(Command("staff_decline"))
 @staff_router.callback_query(F.data == "staff_decline")
-async def ask_booking_id(
+async def ask_booking_id(  # noqa: F811
     event: E,
     state: "FSMContext",
     instructor_id: Union[int, bool],
