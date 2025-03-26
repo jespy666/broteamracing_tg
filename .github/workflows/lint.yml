@@ -23,6 +23,9 @@ jobs:
       with:
         python-version: '3.12'
 
+    - name: Install Poetry
+      run: pip install poetry
+
     - name: Install dependencies
       run: make install
 
