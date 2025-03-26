@@ -4,12 +4,20 @@ from aiogram import Router, F
 from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery
 
-from src.utils import read_template
 from src.keyboards import get_inline_menu, get_cancel_button, get_reply_markup
 from src.routes.booking.states import NewBookingState, CancelBookingState
 from src.middlewares import AuthMiddleware
 from src.routes.booking import utils
 from src.api.manager import APIManager
+from src.utils import (
+    read_template,
+    validate_date,
+    get_start_times,
+    get_available_time_range,
+    validate_amount,
+    render_chosen_bikes,
+    get_end_time,
+)
 
 if TYPE_CHECKING:
     from aiogram.fsm.context import FSMContext
@@ -53,7 +61,7 @@ async def ask_start(message: Message, state: "FSMContext") -> None:
     Состояние 2. Запрос времени начала.
     """
     date: str = message.text
-    if not utils.validate_date(date):
+    if not validate_date(date):
         msg: str = read_template("errors/incorrect_date")
         markup: "InlineKeyboardMarkup" = get_cancel_button()
         await message.answer(msg, reply_markup=markup, parse_mode="HTML")
@@ -62,7 +70,7 @@ async def ask_start(message: Message, state: "FSMContext") -> None:
 
     api = APIManager()
     day_info: List[Dict[str, Any]] = await api.load_day_info(date)
-    starts: List[str] = utils.get_start_times(day_info)
+    starts: List[str] = get_start_times(day_info)
 
     msg = read_template("booking_create/start")
     markup: "ReplyKeyboardMarkup" = get_reply_markup(starts)
@@ -85,7 +93,7 @@ async def ask_duration(message: "Message", state: "FSMContext") -> None:
         await state.set_state(await state.get_state())
         return
 
-    available_hours: List[int] = utils.get_available_time_range(
+    available_hours: List[int] = get_available_time_range(
         data["starts"],
         start,
     )
@@ -191,7 +199,7 @@ async def checkout_bikes(message: "Message", state: "FSMContext") -> None:
     data: Dict[str, Any] = await state.get_data()
     available_bikes: Dict[str, int] = data["available_bikes"]
     bike: str = data["bike"]
-    if not utils.validate_amount(amount, available_bikes[bike]):
+    if not validate_amount(amount, available_bikes[bike]):
         msg: str = read_template("errors/wrong_amount")
         markup: "ReplyKeyboardMarkup" = get_reply_markup(
             list(range(data["available_bikes"][data["bike"]]))
@@ -210,7 +218,7 @@ async def checkout_bikes(message: "Message", state: "FSMContext") -> None:
 
     msg: str = read_template(
         "booking_create/bikes2",
-        bikes=utils.render_chosen_bikes(bikes),
+        bikes=render_chosen_bikes(bikes),
     )
     markup: "ReplyKeyboardMarkup" = get_reply_markup(
         ["Завершить", "Выбрать еще байк"]
@@ -240,10 +248,9 @@ async def confirm(message: "Message", state: "FSMContext") -> None:
                 date=data["date"],
                 start=data["start"],
                 duration=data["duration"],
-                end=utils.get_end_time(data["start"], int(data["duration"])),
+                end=get_end_time(data["start"], int(data["duration"])),
                 instructor_id=data["instructor"],
                 bikes=data["bikes"],
-                is_side_booking=False,
             )
             msg: str = read_template("booking_create/done")
             await message.answer(msg, parse_mode="HTML")

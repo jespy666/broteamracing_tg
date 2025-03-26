@@ -56,7 +56,7 @@ async def start(event: Union[Message, CallbackQuery]) -> None:
     menu["Цены"] = "prices"
     markup: "InlineKeyboardMarkup" = get_inline_menu(menu)
 
-    text: str = read_template("start.txt")
+    text: str = read_template("start")
     await message.answer(text, reply_markup=markup, parse_mode="HTML")
 
 
@@ -77,7 +77,7 @@ async def handle_prices(event: Union[Message, CallbackQuery]) -> None:
     menu["Главная"] = "start"
     markup: "InlineKeyboardMarkup" = get_inline_menu(menu)
 
-    text: str = read_template("prices.txt")
+    text: str = read_template("prices")
     await message.answer(text, reply_markup=markup, parse_mode="HTML")
 
 
@@ -95,5 +95,5 @@ async def handle_help(event: Union[Message, CallbackQuery]) -> None:
     menu["Цены"] = "prices"
     markup: "InlineKeyboardMarkup" = get_inline_menu(menu)
 
-    text: str = read_template("help.txt")
+    text: str = read_template("help")
     await message.answer(text, reply_markup=markup, parse_mode="HTML")

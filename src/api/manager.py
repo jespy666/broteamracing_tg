@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 
 from datetime import datetime, timedelta
 
-from typing import Union, AsyncGenerator, Any, Dict, List, Optional, Literal
+from typing import Union, AsyncGenerator, Any, Dict, List, Literal
 
 from aiohttp import ClientSession
 
@@ -170,8 +170,8 @@ class APIManager(AsyncSession):
         duration: int,
         instructor_id: int,
         bikes: Dict[str, int],
-        is_side_booking=False,
-        url: str = "api/v1/bookings/",
+        client_phone: str = None,
+        url: str = "api/v1/bookings/new/",
     ) -> None:
         """
         Создание записи на прокат.
@@ -184,8 +184,10 @@ class APIManager(AsyncSession):
             "duration": duration,
             "instructor_id": instructor_id,
             "bikes": bikes,
-            "is_side_booking": is_side_booking,
         }
+        if client_phone:
+            payload["client_phone"] = client_phone
+
         async with self.get_session() as session:
             async with session.post(url, data=payload) as response:
                 data = await response.json()
