@@ -1,0 +1,30 @@
+name: linter Check
+
+on:
+  push:
+    branches:
+      - dev
+      - production
+  pull_request:
+    branches:
+      - dev
+      - production
+
+jobs:
+  linter:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: make install
+
+    - name: Run linter
+      run: make lint
