@@ -2,7 +2,7 @@ bot:
 	python3 -m src.bot
 
 lint:
-	ruff check ./src
+	poetry run ruff check ./src
 
 lint-fix:
 	ruff check ./src --fix
@@ -12,3 +12,9 @@ install:
 
 install-no-dev:
 	poetry install --no-root --only main
+
+docker-build:
+	docker build -t btr-bot .
+
+docker-run:
+	docker run --restart always --name test btr-bot

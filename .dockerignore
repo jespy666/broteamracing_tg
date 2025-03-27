@@ -1,0 +1,10 @@
+.gitignore
+LICENSE
+README.md
+venv/
+.github
+.git
+.idea
+.mypy_cache
+.ruff_cache
+.env
