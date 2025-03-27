@@ -22,8 +22,8 @@ booking_router.message.middleware(AuthMiddleware())
 E = TypeVar("E", bound=Union[Message, CallbackQuery])
 
 
-@booking_router.message(Command("book"))
-@booking_router.callback_query(F.data == "book")
+@booking_router.message(Command("booking"))
+@booking_router.callback_query(F.data == "booking")
 async def start_booking(
     event: E,
     state: "FSMContext",
@@ -78,7 +78,7 @@ async def ask_duration(message: "Message", state: "FSMContext") -> None:
     """
     start: str = message.text
     data: Dict[str, Any] = await state.get_data()
-    if start not in data["starts"]:
+    if not start in data["starts"]:
         msg = root_utils.read_template("errors/chose", entity="время начала")
         markup: "ReplyKeyboardMarkup" = get_reply_markup(data["starts"])
         await message.answer(msg, reply_markup=markup, parse_mode="HTML")
@@ -103,8 +103,11 @@ async def ask_instructor(message: "Message", state: "FSMContext") -> None:
     """
     duration: str = message.text
     data: Dict[str, Any] = await state.get_data()
-    if int(duration) not in data["durations"]:
-        msg = root_utils.read_template("errors/chose", entity="длительность")
+    if not root_utils.validate_duration(duration, data["durations"]):
+        msg = root_utils.read_template(
+            "errors/chose",
+            entity="длительность",
+        )
         markup: "ReplyKeyboardMarkup" = get_reply_markup(data["durations"])
         await message.answer(msg, reply_markup=markup, parse_mode="HTML")
         await state.set_state(await state.get_state())

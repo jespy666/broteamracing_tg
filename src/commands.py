@@ -21,27 +21,15 @@ async def set_commands(bot: "Bot") -> None:
         ),
         BotCommand(
             command="help",
-            description="Помощь",
+            description="Справка",
         ),
         BotCommand(
-            command="create",
-            description="1",
-        ),
-        BotCommand(
-            command="book",
-            description="2",
-        ),
-        BotCommand(
-            command="reset",
-            description="3",
+            command="booking",
+            description="Запись на прокат",
         ),
         BotCommand(
             command="cancel",
-            description="4",
-        ),
-        BotCommand(
-            command="edit",
-            description="5",
+            description="Отменить запись на прокат",
         ),
     ]
 
