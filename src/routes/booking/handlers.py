@@ -221,9 +221,11 @@ async def checkout_bikes(message: "Message", state: "FSMContext") -> None:
         "booking_create/bikes2",
         bikes=root_utils.render_chosen_bikes(bikes),
     )
-    markup: "ReplyKeyboardMarkup" = get_reply_markup(
-        ["Завершить", "Выбрать еще байк"]
-    )
+    kb: List[str] = ["Завершить"]
+    if available_bikes:
+        kb.append("Выбрать еще байк")
+    markup: "ReplyKeyboardMarkup" = get_reply_markup(kb)
+
     await message.answer(msg, reply_markup=markup, parse_mode="HTML")
     await state.update_data(
         bike=None,
@@ -269,7 +271,8 @@ async def confirm(message: "Message", state: "FSMContext") -> None:
             return
         case _:
             msg: str = root_utils.read_template(
-                "errors/chose", entity="действие"
+                "errors/chose",
+                entity="действие",
             )
             markup: "ReplyKeyboardMarkup" = get_reply_markup(actions)
             await message.answer(msg, reply_markup=markup, parse_mode="HTML")
@@ -279,7 +282,7 @@ async def confirm(message: "Message", state: "FSMContext") -> None:
 
 @booking_router.message(Command("cancel"))
 @booking_router.callback_query(F.data == "cancel")
-async def start_booking(  # noqa: F811
+async def ask_booking_id(
     event: E,
     state: "FSMContext",
     has_access: bool,
