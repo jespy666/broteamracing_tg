@@ -33,5 +33,3 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/broteamracing-tg:latest
             ${{ secrets.DOCKER_USERNAME }}/broteamracing-tg:${{ env.IMAGE_TAG }}
-          cache-from: type=registry
-          cache-to: type=inline
