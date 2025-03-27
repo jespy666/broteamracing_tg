@@ -62,7 +62,7 @@ async def ask_start(message: Message, state: "FSMContext") -> None:
     """
     date: str = message.text
     if not validate_date(date):
-        msg: str = read_template("errors/incorrect_date")
+        msg: str = read_template("errors/date")
         markup: "InlineKeyboardMarkup" = get_cancel_button()
         await message.answer(msg, reply_markup=markup, parse_mode="HTML")
         await state.set_state(await state.get_state())
@@ -87,7 +87,7 @@ async def ask_duration(message: "Message", state: "FSMContext") -> None:
     start: str = message.text
     data: Dict[str, Any] = await state.get_data()
     if start not in data["starts"]:
-        msg = read_template("errors/wrong_time")
+        msg = read_template("errors/chose", entity="время начала")
         markup: "ReplyKeyboardMarkup" = get_reply_markup(data["starts"])
         await message.answer(msg, reply_markup=markup, parse_mode="HTML")
         await state.set_state(await state.get_state())
@@ -112,7 +112,7 @@ async def ask_instructor(message: "Message", state: "FSMContext") -> None:
     duration: str = message.text
     data: Dict[str, Any] = await state.get_data()
     if int(duration) not in data["durations"]:
-        msg = read_template("errors/wrong_duration")
+        msg = read_template("errors/chose", entity="длительность")
         markup: "ReplyKeyboardMarkup" = get_reply_markup(data["durations"])
         await message.answer(msg, reply_markup=markup, parse_mode="HTML")
         await state.set_state(await state.get_state())
@@ -139,7 +139,7 @@ async def ask_bikes(message: "Message", state: "FSMContext") -> None:
     instructor: str = message.text
     data: Dict[str, Any] = await state.get_data()
     if instructor not in list(data["instructors"].keys()):
-        msg = read_template("errors/instructor")
+        msg = read_template("errors/chose", entity="инструктора")
         markup: "ReplyKeyboardMarkup" = get_reply_markup(
             list(data["instructors"].keys())
         )
@@ -173,7 +173,7 @@ async def ask_amount(message: "Message", state: "FSMContext") -> None:
     bike: str = message.text
     data: Dict[str, Any] = await state.get_data()
     if bike not in data["available_bikes"].keys():
-        msg: str = read_template("errors/wrong_duration")
+        msg: str = read_template("errors/chose", entity="байк")
         markup: "ReplyKeyboardMarkup" = get_reply_markup(
             list(data["available_bikes"].keys())
         )
@@ -200,7 +200,7 @@ async def checkout_bikes(message: "Message", state: "FSMContext") -> None:
     available_bikes: Dict[str, int] = data["available_bikes"]
     bike: str = data["bike"]
     if not validate_amount(amount, available_bikes[bike]):
-        msg: str = read_template("errors/wrong_amount")
+        msg: str = read_template("errors/chose", entity="количество")
         markup: "ReplyKeyboardMarkup" = get_reply_markup(
             list(range(data["available_bikes"][data["bike"]]))
         )
@@ -264,7 +264,7 @@ async def confirm(message: "Message", state: "FSMContext") -> None:
             await state.set_state(NewBookingState.bike)
             return
         case _:
-            msg: str = read_template("errors/wrong_action")
+            msg: str = read_template("errors/chose", entity="действие")
             markup: "ReplyKeyboardMarkup" = get_reply_markup(actions)
             await message.answer(msg, reply_markup=markup, parse_mode="HTML")
             await state.set_state(await state.get_state())
@@ -315,7 +315,7 @@ async def cancel_booking(message: "Message", state: "FSMContext") -> None:
     booking_id: str = message.text
     data: Dict[str, Any] = await state.get_data()
     if not utils.validate_booking_id(booking_id, data["bookings"]):
-        msg: str = read_template("booking_cancel/wrong_id")
+        msg: str = read_template("errors/chose", entity="ID записи")
         markup: "ReplyKeyboardMarkup" = get_reply_markup(
             [booking["id"] for booking in data["bookings"]]
         )

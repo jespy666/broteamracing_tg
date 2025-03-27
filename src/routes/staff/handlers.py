@@ -33,7 +33,7 @@ async def staff_menu(
     Меню для персонала.
     """
     if not instructor_id:
-        msg: str = read_template("staff/restricted")
+        msg: str = read_template("errors/restricted")
         await message.answer(msg, parse_mode="HTML")
         return
 
@@ -54,7 +54,7 @@ async def ask_booking_id(
     """
     message = event if isinstance(event, Message) else event.message
     if not instructor_id:
-        msg: str = read_template("staff/restricted")
+        msg: str = read_template("errors/restricted")
         await message.answer(msg, parse_mode="HTML")
         await state.clear()
         return
@@ -81,7 +81,7 @@ async def ask_bike(message: Message, state: "FSMContext") -> None:
     booking_id: str = message.text
     data: Dict[str, Any] = await state.get_data()
     if not validate_booking_id(booking_id, data["bookings"]):
-        msg: str = read_template("staff/accept/wrong_booking_id")
+        msg: str = read_template("errors/chose", entity="ID проката")
         markup: "ReplyKeyboardMarkup" = get_reply_markup(
             [booking["id"] for booking in data["bookings"]]
         )
@@ -115,7 +115,7 @@ async def accept_booking(message: Message, state: "FSMContext") -> None:
     bike: str = message.text
     data: Dict[str, Any] = await state.get_data()
     if bike not in data["available_bikes"].keys():
-        msg: str = read_template("staff/accept/wrong_bike")
+        msg: str = read_template("errors/chose", entity="байк")
         markup: "ReplyKeyboardMarkup" = get_reply_markup(
             list(data["available_bikes"].keys())
         )
@@ -154,7 +154,7 @@ async def ask_booking_id(  # noqa: F811
     """
     message = event if isinstance(event, Message) else event.message
     if not instructor_id:
-        msg: str = read_template("staff/restricted")
+        msg: str = read_template("errors/restricted")
         await message.answer(msg, parse_mode="HTML")
         await state.clear()
         return
@@ -184,7 +184,7 @@ async def decline_booking(message: Message, state: "FSMContext") -> None:
     booking_id: str = message.text
     data: Dict[str, Any] = await state.get_data()
     if not validate_booking_id(booking_id, data["bookings"]):
-        msg: str = read_template("staff/decline/wrong_booking_id")
+        msg: str = read_template("errors/chose", entity="ID записи")
         markup: "ReplyKeyboardMarkup" = get_reply_markup(
             [booking["id"] for booking in data["bookings"]]
         )
@@ -212,7 +212,7 @@ async def show_bookings(
     """
     message = event if isinstance(event, Message) else event.message
     if not instructor_id:
-        msg: str = read_template("staff/restricted")
+        msg: str = read_template("errors/restricted")
         await message.answer(msg, parse_mode="HTML")
         return
 
