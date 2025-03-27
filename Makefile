@@ -2,7 +2,7 @@ bot:
 	python3 -m src.bot
 
 lint:
-	ruff check ./src
+	poetry run ruff check ./src
 
 lint-fix:
 	ruff check ./src --fix
