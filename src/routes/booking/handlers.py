@@ -203,7 +203,7 @@ async def checkout_bikes(message: "Message", state: "FSMContext") -> None:
             entity="количество",
         )
         markup: "ReplyKeyboardMarkup" = get_reply_markup(
-            list(range(data["available_bikes"][data["bike"]]))
+            list(range(1, data["available_bikes"][data["bike"]] + 1))
         )
         await message.answer(msg, reply_markup=markup, parse_mode="HTML")
         await state.set_state(await state.get_state())
