@@ -12,3 +12,9 @@ install:
 
 install-no-dev:
 	poetry install --no-root --only main
+
+docker-build:
+	docker build -t btr-bot .
+
+docker-run:
+	docker run --restart always --name test btr-bot
