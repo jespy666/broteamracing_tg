@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, TypeVar, Union, Dict, List, Any
+from typing import TYPE_CHECKING, TypeVar, Union, Dict, List, Any, Optional
 
 from aiogram import Router, F
 from aiogram.filters import Command
@@ -6,9 +6,8 @@ from aiogram.types import Message, CallbackQuery
 
 from src.api.manager import APIManager
 from src.routes.staff import utils
-from src.routes.booking.utils import validate_booking_id
 from src.middlewares import StaffMiddleware
-from src.utils import read_template
+from src.utils import read_template, render_bookings, validate_booking_id
 from src.keyboards import get_inline_menu, get_reply_markup
 from src.routes.staff.states import AcceptBookingState, DeclineBookingState
 
@@ -63,7 +62,7 @@ async def ask_booking_id(
     bookings: List[Dict[str, str]] = await api.get_bookings("pending")
     msg = read_template(
         "staff/accept/booking_id",
-        bookings=utils.render_bookings(bookings),
+        bookings=render_bookings(bookings),
     )
     markup: "ReplyKeyboardMarkup" = get_reply_markup(
         [booking["id"] for booking in bookings]
@@ -124,12 +123,13 @@ async def accept_booking(message: Message, state: "FSMContext") -> None:
         return
 
     api = APIManager()
-    if not await api.accept_booking(
+    error: Optional[str] = await api.accept_booking(
         int(data["booking"]["id"]),
         data["instructor_id"],
         data["available_bikes"][bike],
-    ):
-        msg: str = read_template("staff/accept/overbooking")
+    )
+    if error:
+        msg: str = read_template("staff/accept/error", error=error)
         markup: "ReplyKeyboardMarkup" = get_reply_markup(
             [booking["id"] for booking in data["bookings"]]
         )
@@ -166,7 +166,7 @@ async def ask_booking_id(  # noqa: F811
     )
     msg: str = read_template(
         "staff/decline/booking_id",
-        bookings=utils.render_bookings(bookings),
+        bookings=render_bookings(bookings),
     )
     markup: "ReplyKeyboardMarkup" = get_reply_markup(
         [booking["id"] for booking in bookings]
@@ -223,7 +223,7 @@ async def show_bookings(
     )
     msg: str = read_template(
         "staff/bookings",
-        bookings=utils.render_bookings(bookings),
+        bookings=render_bookings(bookings),
     )
     markup: "InlineKeyboardMarkup" = get_inline_menu(utils.MENU)
     await message.answer(msg, reply_markup=markup, parse_mode="HTML")

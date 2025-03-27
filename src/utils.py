@@ -38,6 +38,19 @@ def validate_date(date: str) -> bool:
         return False
 
 
+def validate_booking_id(
+    booking_id: str,
+    bookings: List[Dict[str, Union[str, int]]],
+) -> bool:
+    """
+    Валидация Типа booking_id и ее вхождение в список записей.
+    """
+    try:
+        return int(booking_id) in [booking["id"] for booking in bookings]
+    except ValueError:
+        return False
+
+
 def get_start_times(day_info: List[Dict[str, Any]]) -> List[str]:
     """
     Извлечение доступных времен начала проката.
@@ -94,6 +107,21 @@ def render_chosen_bikes(bikes: Dict[str, int]) -> str:
         for title, amount in bikes.items()
     ]
     return "\n\n".join(html_bikes)
+
+
+def render_bookings(bookings: List[Dict[str, str]]) -> str:
+    """
+    Рендер в HTML списка прокатов.
+    """
+    html_bookings = [
+        (
+            f"🔘 <strong>#{booking["id"]}</strong>: <em>{booking["date"]} |"
+            f" {booking["start"]} - {booking["end"]} |"
+            f" <strong>{booking["instructor"]}</strong></em>"
+        )
+        for booking in bookings
+    ]
+    return "\n\n".join(html_bookings)
 
 
 def get_end_time(start: str, duration: int) -> str:
