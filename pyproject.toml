@@ -1,6 +1,9 @@
 [tool.black]
 line-length = 79
 
+[tool.ruff]
+lint.ignore = ["F811"]
+
 [tool.poetry]
 name = "broteamracing-tg"
 version = "0.1.0"
