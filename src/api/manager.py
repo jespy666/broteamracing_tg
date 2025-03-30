@@ -327,7 +327,7 @@ class APIManager(AsyncSession):
         self,
         booking_id: int,
         instructor_id: int,
-        bike_id: int,
+        bike_title: str,
         is_admin: bool = False,
         url: str = "api/v1/staff/bookings/accept/",
     ) -> Optional[str]:
@@ -341,7 +341,7 @@ class APIManager(AsyncSession):
         payload = {
             "booking_id": booking_id,
             "instructor_id": instructor_id,
-            "bike_id": bike_id,
+            "bike_title": bike_title,
         }
         async with self.get_session() as session:
             async with session.post(url, data=json.dumps(payload)) as response:
