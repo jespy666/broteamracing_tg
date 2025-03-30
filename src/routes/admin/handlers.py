@@ -70,7 +70,7 @@ async def ask_start(message: Message, state: "FSMContext") -> None:
     """
     date: str = message.text
     if not root_utils.validate_date(date):
-        msg: str = root_utils.read_template("errors/incorrect_date")
+        msg: str = root_utils.read_template("errors/date")
         await message.answer(msg, parse_mode="HTML")
         await state.set_state(await state.get_state())
         return
@@ -350,6 +350,14 @@ async def ask_booking_id(
 
     api = APIManager()
     bookings: List[Dict[str, str]] = await api.get_bookings("pending")
+    if not bookings:
+        msg: str = root_utils.read_template(
+            "errors/empty_bookings",
+            action="подтверждения",
+        )
+        await message.answer(msg, parse_mode="HTML")
+        await state.clear()
+        return
     msg: str = root_utils.read_template(
         "admin/accept/booking_id",
         bookings=root_utils.render_bookings(bookings),
@@ -469,7 +477,7 @@ async def accept_booking(message: Message, state: "FSMContext") -> None:
     error: Optional[str] = await api.accept_booking(
         int(data["booking"]["id"]),
         int(instructor_id),
-        data["available_bikes"][bike],
+        bike,
         is_admin=True,
     )
     if error:
@@ -508,6 +516,14 @@ async def ask_booking_id(
 
     api = APIManager()
     bookings: List[Dict[str, str]] = await api.get_bookings()
+    if not bookings:
+        msg: str = root_utils.read_template(
+            "errors/empty_bookings",
+            action="отмены",
+        )
+        await message.answer(msg, parse_mode="HTML")
+        await state.clear()
+        return
     msg: str = root_utils.read_template(
         "admin/cancel/booking_id",
         bookings=root_utils.render_bookings(bookings),
@@ -565,6 +581,14 @@ async def ask_booking_id(
 
     api = APIManager()
     bookings: List[Dict[str, str]] = await api.get_bookings("confirmed")
+    if not bookings:
+        msg: str = root_utils.read_template(
+            "errors/empty_bookings",
+            action="перевода в ожидание",
+        )
+        await message.answer(msg, parse_mode="HTML")
+        await state.clear()
+        return
     msg: str = root_utils.read_template(
         "admin/pending/booking_id",
         bookings=root_utils.render_bookings(bookings),
@@ -622,6 +646,14 @@ async def ask_booking_id(
 
     api = APIManager()
     bookings: List[Dict[str, str]] = await api.get_bookings()
+    if not bookings:
+        msg: str = root_utils.read_template(
+            "errors/empty_bookings",
+            action="замены инструктора",
+        )
+        await message.answer(msg, parse_mode="HTML")
+        await state.clear()
+        return
     msg: str = root_utils.read_template(
         "admin/pending/booking_id",
         bookings=root_utils.render_bookings(bookings),

@@ -60,6 +60,15 @@ async def ask_booking_id(
 
     api = APIManager()
     bookings: List[Dict[str, str]] = await api.get_bookings("pending")
+    if not bookings:
+        msg: str = read_template(
+            "errors/empty_bookings",
+            action="взятия в работу",
+        )
+        await message.answer(msg, parse_mode="HTML")
+        await state.clear()
+        return
+
     msg = read_template(
         "staff/accept/booking_id",
         bookings=render_bookings(bookings),
@@ -126,7 +135,7 @@ async def accept_booking(message: Message, state: "FSMContext") -> None:
     error: Optional[str] = await api.accept_booking(
         int(data["booking"]["id"]),
         data["instructor_id"],
-        data["available_bikes"][bike],
+        bike,
     )
     if error:
         msg: str = read_template("staff/accept/error", error=error)
@@ -164,6 +173,14 @@ async def ask_booking_id(  # noqa: F811
         "confirmed",
         instructor_id=instructor_id,
     )
+    if not bookings:
+        msg: str = read_template(
+            "errors/empty_bookings",
+            action="отказа",
+        )
+        await message.answer(msg, parse_mode="HTML")
+        await state.clear()
+        return
     msg: str = read_template(
         "staff/decline/booking_id",
         bookings=render_bookings(bookings),
@@ -221,6 +238,15 @@ async def show_bookings(
         "confirmed",
         instructor_id=instructor_id,
     )
+    if not bookings:
+        msg: str = read_template(
+            "errors/empty_bookings",
+            action="просмотра",
+        )
+        await message.answer(msg, parse_mode="HTML")
+        await state.clear()
+        return
+
     msg: str = read_template(
         "staff/bookings",
         bookings=render_bookings(bookings),
