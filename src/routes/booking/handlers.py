@@ -303,13 +303,13 @@ async def confirm(message: "Message", state: "FSMContext") -> None:
 async def ask_booking_id(
     event: E,
     state: "FSMContext",
-    has_access: bool,
+    is_authenticated: bool,
 ) -> None:
     """
     Состояние 1. Отмена записи. Показ всех предстоящих записей.
     """
     message = event if isinstance(event, Message) else event.message
-    if not has_access:
+    if not is_authenticated:
         msg = root_utils.read_template("errors/access")
         markup: "InlineKeyboardMarkup" = get_inline_menu(
             {"Привязать аккаунт": "link-account"}
@@ -319,7 +319,7 @@ async def ask_booking_id(
     else:
         api = APIManager()
         bookings: List[Dict[str, Union[str, int]]] = (
-            await api.get_user_active_bookings(str(message.from_user.id))
+            await api.get_user_active_bookings(str(event.from_user.id))
         )
 
         markup: "ReplyKeyboardMarkup" = get_reply_markup(
