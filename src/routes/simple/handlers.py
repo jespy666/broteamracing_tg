@@ -21,21 +21,22 @@ async def enable_updates(message: Message, command: CommandObject) -> None:
     Установка уведомлений для пользователя в ТГ.
     """
     args = command.args
-    try:
-        # ID пользователя из приложения
-        user_id = int(args)
+    # ID пользователя из приложения
+    user_id = int(args)
+    telegram_id = str(message.from_user.id)
 
-        telegram_id: Union[str, int] = message.from_user.id
-        api = APIManager()
+    # Проверка на привязку Телеграм аккаунта
+    if not await APIManager().check_telegram_id(telegram_id):
+        await APIManager().set_telegram_id(user_id, telegram_id)
+        await message.answer("🔗 Аккаунт ТГ связан с веб-приложением!")
 
-        # Проверка на привязку Телеграм аккаунта
-        if not await api.check_telegram_id(user_id):
-            await api.set_telegram_id(user_id, telegram_id)
-        await message.answer("🆗 Уведомления включены")
-    except Exception as e:
-        await message.answer(
-            f"Произошла ошибка при включении обновлений:\n\n{e}"
-        )
+    # Включение или выключение Телеграм уведомлений
+    state: bool = await APIManager().check_notifications_enabled(user_id)
+    if not state:
+        await APIManager().switch_notifications(user_id)
+        await message.answer("🔔 Уведомления включены")
+    else:
+        await message.answer("🔔 Уведомления уже включены")
 
 
 @simple_router.message(Command("start"))

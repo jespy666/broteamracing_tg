@@ -41,6 +41,42 @@ class APIManager(AsyncSession):
     Менеджер API подключения к основному приложению.
     """
 
+    async def check_notifications_enabled(
+        self,
+        user_id: int,
+        url: str = "api/v1/check/tg_notifications/",
+    ) -> bool:
+        """
+        Проверка, что уведомления включены.
+        """
+        request_params = f"?user_id={user_id}"
+        async with self.get_session() as session:
+            async with session.get(f"{url}{request_params}") as response:
+                data = await response.json()
+                if response.status == 200:
+                    if data.get("ok") == "Уведомления включены":
+                        return True
+                return False
+
+    async def switch_notifications(
+        self,
+        user_id: int,
+        url: str = "api/v1/set/tg_notifications/",
+    ) -> str:
+        """
+        Переключатель уведомлений.
+        """
+        payload = {"user_id": user_id}
+        async with self.get_session() as session:
+            async with session.post(url, data=json.dumps(payload)) as response:
+                data = await response.json()
+                if not response.status == 200:
+                    raise exc.APIError(
+                        status_code=response.status,
+                        detail=data.get("detail"),
+                    )
+                return data.get("ok")
+
     async def set_telegram_id(
         self,
         user_id: int,
