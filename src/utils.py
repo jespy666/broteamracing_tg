@@ -1,4 +1,4 @@
-from typing import Union, List, Any, Dict
+from typing import Union, List, Any, Dict, Optional, Tuple
 
 from datetime import datetime, timedelta
 
@@ -93,6 +93,48 @@ def validate_amount(amount: str, max_value: int) -> bool:
         return int(amount) <= max_value
     except ValueError:
         return False
+
+
+def has_bike_for_instructor(
+    requested_bike: Dict[str, int],
+    available_bikes: Dict[str, int],
+) -> bool:
+    """
+    Проверка на остаток байка сопровождения для инструктора.
+    """
+    # Вычитаем запрошенные байки из доступных
+    for bike, count in requested_bike.items():
+        if bike in available_bikes:
+            available_bikes[bike] -= count
+            if available_bikes[bike] <= 0:
+                del available_bikes[bike]
+
+    # Проверяем, остался ли хотя бы один байк с количеством >= 1
+    return any(count >= 1 for count in available_bikes.values())
+
+
+def reduce_bike_count(
+    requested_bike: Tuple[str, int],
+    available_bikes: Dict[str, int],
+) -> Union[Dict[str, int], False]:
+    """
+    Уменьшает кол-во байков, на выбранный байк.
+    """
+    r_bike, r_amount = requested_bike
+    if not r_bike in available_bikes:
+        return False
+    if len(available_bikes) == 1:
+        if r_amount >= available_bikes[r_bike]:
+            return False
+        else:
+            available_bikes[r_bike] -= r_amount
+    else:
+        if r_amount == available_bikes[r_bike]:
+            del available_bikes[r_bike]
+        else:
+            available_bikes[r_bike] -= r_amount
+
+    return available_bikes
 
 
 def render_chosen_bikes(bikes: Dict[str, int]) -> str:

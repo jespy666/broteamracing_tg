@@ -247,17 +247,35 @@ async def checkout_bikes(message: Message, state: "FSMContext") -> None:
     bikes: Optional[Dict[str, int]] = data.get("bikes", {})
     bikes[bike] = int(amount)
 
-    # Удаляем байк из доступных
-    for key in bikes:
-        available_bikes.pop(key, None)
+    reduced_bikes: Union[Dict[str, int], False] = root_utils.reduce_bike_count(
+        (bike, int(amount)),
+        available_bikes,
+    )
+    if reduced_bikes is False:
+        msg: str = root_utils.read_template("errors/overbike")
+        markup: "ReplyKeyboardMarkup" = get_reply_markup(
+            list(range(1, data["available_bikes"][data["bike"]] + 1))
+        )
+        await message.answer(msg, reply_markup=markup, parse_mode="HTML")
+        await state.set_state(await state.get_state())
+        return
 
     msg: str = root_utils.read_template(
         "admin/new_booking/bikes2",
         bikes=root_utils.render_chosen_bikes(bikes),
     )
-    markup: "ReplyKeyboardMarkup" = get_reply_markup(
-        ["Завершить", "Выбрать еще байк"]
-    )
+    kb: List[str] = ["Завершить"]
+
+    # Проверка на доступность байков
+    if len(reduced_bikes) == 1:
+        # Если остался только один байк, резервируем его для инструктора
+        key, value = next(iter(available_bikes.items()))
+        if value > 1:
+            kb.append("Выбрать еще байк")
+    else:
+        kb.append("Выбрать еще байк")
+
+    markup: "ReplyKeyboardMarkup" = get_reply_markup(kb)
     await message.answer(msg, reply_markup=markup, parse_mode="HTML")
     await state.update_data(
         bike=None,
