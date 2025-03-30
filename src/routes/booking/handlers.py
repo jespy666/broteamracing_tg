@@ -79,7 +79,7 @@ async def ask_duration(message: "Message", state: "FSMContext") -> None:
     """
     start: str = message.text
     data: Dict[str, Any] = await state.get_data()
-    if not start in data["starts"]:
+    if start not in data["starts"]:
         msg = root_utils.read_template("errors/chose", entity="время начала")
         markup: "ReplyKeyboardMarkup" = get_reply_markup(data["starts"])
         await message.answer(msg, reply_markup=markup, parse_mode="HTML")

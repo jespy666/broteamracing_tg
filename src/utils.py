@@ -1,4 +1,4 @@
-from typing import Union, List, Any, Dict, Optional, Tuple
+from typing import Union, List, Any, Dict, Tuple
 
 from datetime import datetime, timedelta
 
@@ -121,7 +121,7 @@ def reduce_bike_count(
     Уменьшает кол-во байков, на выбранный байк.
     """
     r_bike, r_amount = requested_bike
-    if not r_bike in available_bikes:
+    if r_bike not in available_bikes:
         return False
     if len(available_bikes) == 1:
         if r_amount >= available_bikes[r_bike]:
