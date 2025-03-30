@@ -4,12 +4,9 @@ from datetime import datetime, timedelta
 
 
 MENU = {
-    "Записаться": "book",
+    "Записаться": "booking",
     "Помощь": "help",
-    "Регистрация": "create",
-    "Сброс пароля": "reset",
     "Отмена записи": "cancel",
-    "Изменить запись": "edit",
 }
 
 
