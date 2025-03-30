@@ -1,14 +1,21 @@
-<strong>❗️1️⃣6️⃣ +️</strong>
-
-<em><strong>Добро пожаловать!
+<strong>👋 Привет,
 Я Broteamracing Bot!</strong>
 
-С моей помощью вы сможете:</em>
 
-👤 <strong>Создать аккаунт на broteamracing.ru</strong>
-📆 <strong>Записаться и управлять записями</strong>
-💵 <strong>Посмотреть цены на прокат</strong>
-🔓 <strong>Восстановить доступ к аккаунту</strong>
-📱 <strong>Узнать наши контакты</strong>
+Я могу ↙️
 
-🌐 broteamracing.ru
+
+<strong>🔔 Присылать вам уведомления о прокатах</strong>
+
+<strong>🗓 Записать вас на прокат</strong>
+
+<strong>❌ Отменить вашу запись на прокат</strong>
+
+<strong>🏍 Рассказать о ценах и байках</strong>
+
+<strong>📞 Рассказать, как с нами связаться</strong>
+
+
+<strong>🌐 Наш сайт ↙️</strong>
+
+<em>https://broteamracing.ru</em>
