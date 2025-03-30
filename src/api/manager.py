@@ -436,3 +436,21 @@ class APIManager(AsyncSession):
                         status_code=response.status,
                         detail=data.get("detail"),
                     )
+
+    async def connect_web(
+        self,
+        telegram_id: str,
+        url: str = "my/connect_tg_account/",
+    ) -> None:
+        """
+        Замена инструктора администратором.
+        """
+        request_params = f"?telegram_id={telegram_id}"
+        async with self.get_session() as session:
+            async with session.get(f"{url}{request_params}") as response:
+                data = await response.json()
+                if not response.status == 200:
+                    raise exc.APIError(
+                        status_code=response.status,
+                        detail=data.get("detail"),
+                    )

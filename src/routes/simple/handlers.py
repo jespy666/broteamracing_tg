@@ -7,6 +7,7 @@ from aiogram.types import Message, CallbackQuery
 from src.utils import read_template, MENU
 from src.keyboards import get_inline_menu
 from src.api.manager import APIManager
+from src import exceptions as exc
 
 if TYPE_CHECKING:
     from aiogram.types import InlineKeyboardMarkup
@@ -98,3 +99,25 @@ async def handle_help(event: Union[Message, CallbackQuery]) -> None:
 
     text: str = read_template("help")
     await message.answer(text, reply_markup=markup, parse_mode="HTML")
+
+
+@simple_router.callback_query(F.data == "connect_web")
+async def connect_web_app(callback: "CallbackQuery") -> None:
+    """
+    Привязка Телеграм аккаунта и Веб приложения.
+    """
+    telegram_id: int = callback.from_user.id
+    try:
+        await APIManager().connect_web(str(telegram_id))
+        await callback.message.answer(
+            read_template("connect"),
+            parse_mode="HTML",
+        )
+    except exc.APIError as e:
+        await callback.message.answer(
+            read_template(
+                "errors/connect",
+                text=e.detail,
+            ),
+            parse_mode="HTML",
+        )

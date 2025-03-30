@@ -4,12 +4,14 @@ from aiogram import Router, F
 from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery
 
-from src.keyboards import get_inline_menu, get_cancel_button, get_reply_markup
+from src.keyboards import get_cancel_button, get_reply_markup
 from src.routes.booking.states import NewBookingState, CancelBookingState
 from src.middlewares import AuthMiddleware
 from src.routes.booking import utils
 from src.api.manager import APIManager
 from src import utils as root_utils
+
+from config import settings
 
 if TYPE_CHECKING:
     from aiogram.fsm.context import FSMContext
@@ -35,15 +37,16 @@ async def start_booking(
     """
     message = event if isinstance(event, Message) else event.message
     if not is_authenticated:
-        msg = root_utils.read_template("errors/access")
-        markup: "InlineKeyboardMarkup" = get_inline_menu(
-            {"Привязать аккаунт": "link-account"}
+        msg = root_utils.read_template(
+            "connect",
+            link=f"{settings.BASE_API_URL}/my/connect_tg_account/",
         )
+        await message.answer(msg, parse_mode="HTML")
         await state.clear()
-    else:
-        markup: "InlineKeyboardMarkup" = get_cancel_button()
-        msg = root_utils.read_template("booking_create/date")
+        return
 
+    markup: "InlineKeyboardMarkup" = get_cancel_button()
+    msg = root_utils.read_template("booking_create/date")
     await message.answer(msg, reply_markup=markup, parse_mode="HTML")
     await state.set_state(NewBookingState.date)
 
@@ -310,12 +313,13 @@ async def ask_booking_id(
     """
     message = event if isinstance(event, Message) else event.message
     if not is_authenticated:
-        msg = root_utils.read_template("errors/access")
-        markup: "InlineKeyboardMarkup" = get_inline_menu(
-            {"Привязать аккаунт": "link-account"}
+        msg = root_utils.read_template(
+            "connect",
+            link=f"{settings.BASE_API_URL}/my/connect_tg_account/",
         )
-        await message.answer(msg, reply_markup=markup, parse_mode="HTML")
+        await message.answer(msg, parse_mode="HTML")
         await state.clear()
+        return
     else:
         api = APIManager()
         bookings: List[Dict[str, Union[str, int]]] = (
