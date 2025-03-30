@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 
 booking_router = Router()
 booking_router.message.middleware(AuthMiddleware())
+booking_router.callback_query.middleware(AuthMiddleware())
 
 E = TypeVar("E", bound=Union[Message, CallbackQuery])
 
