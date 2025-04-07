@@ -1,15 +1,12 @@
-from typing import Union, List, Any, Dict
+from typing import Union, List, Any, Dict, Tuple
 
 from datetime import datetime, timedelta
 
 
 MENU = {
-    "Записаться": "book",
+    "Записаться": "booking",
     "Помощь": "help",
-    "Регистрация": "create",
-    "Сброс пароля": "reset",
     "Отмена записи": "cancel",
-    "Изменить запись": "edit",
 }
 
 
@@ -34,6 +31,19 @@ def validate_date(date: str) -> bool:
     try:
         parsed_date = datetime.strptime(date, "%Y-%m-%d").date()
         return parsed_date >= datetime.now().date()
+    except ValueError:
+        return False
+
+
+def validate_booking_id(
+    booking_id: str,
+    bookings: List[Dict[str, Union[str, int]]],
+) -> bool:
+    """
+    Валидация Типа booking_id и ее вхождение в список записей.
+    """
+    try:
+        return int(booking_id) in [booking["id"] for booking in bookings]
     except ValueError:
         return False
 
@@ -85,6 +95,48 @@ def validate_amount(amount: str, max_value: int) -> bool:
         return False
 
 
+def has_bike_for_instructor(
+    requested_bike: Dict[str, int],
+    available_bikes: Dict[str, int],
+) -> bool:
+    """
+    Проверка на остаток байка сопровождения для инструктора.
+    """
+    # Вычитаем запрошенные байки из доступных
+    for bike, count in requested_bike.items():
+        if bike in available_bikes:
+            available_bikes[bike] -= count
+            if available_bikes[bike] <= 0:
+                del available_bikes[bike]
+
+    # Проверяем, остался ли хотя бы один байк с количеством >= 1
+    return any(count >= 1 for count in available_bikes.values())
+
+
+def reduce_bike_count(
+    requested_bike: Tuple[str, int],
+    available_bikes: Dict[str, int],
+) -> Union[Dict[str, int], False]:
+    """
+    Уменьшает кол-во байков, на выбранный байк.
+    """
+    r_bike, r_amount = requested_bike
+    if r_bike not in available_bikes:
+        return False
+    if len(available_bikes) == 1:
+        if r_amount >= available_bikes[r_bike]:
+            return False
+        else:
+            available_bikes[r_bike] -= r_amount
+    else:
+        if r_amount == available_bikes[r_bike]:
+            del available_bikes[r_bike]
+        else:
+            available_bikes[r_bike] -= r_amount
+
+    return available_bikes
+
+
 def render_chosen_bikes(bikes: Dict[str, int]) -> str:
     """
     Рендер в HTML формат байки, которые уже выбрал клиент.
@@ -94,6 +146,21 @@ def render_chosen_bikes(bikes: Dict[str, int]) -> str:
         for title, amount in bikes.items()
     ]
     return "\n\n".join(html_bikes)
+
+
+def render_bookings(bookings: List[Dict[str, str]]) -> str:
+    """
+    Рендер в HTML списка прокатов.
+    """
+    html_bookings = [
+        (
+            f"🔘 <strong>#{booking["id"]}</strong>: <em>{booking["date"]} |"
+            f" {booking["start"]} - {booking["end"]} |"
+            f" <strong>{booking["instructor"]}</strong></em>"
+        )
+        for booking in bookings
+    ]
+    return "\n\n".join(html_bookings)
 
 
 def get_end_time(start: str, duration: int) -> str:

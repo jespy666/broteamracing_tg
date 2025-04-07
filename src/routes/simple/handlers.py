@@ -7,6 +7,7 @@ from aiogram.types import Message, CallbackQuery
 from src.utils import read_template, MENU
 from src.keyboards import get_inline_menu
 from src.api.manager import APIManager
+from src import exceptions as exc
 
 if TYPE_CHECKING:
     from aiogram.types import InlineKeyboardMarkup
@@ -21,21 +22,22 @@ async def enable_updates(message: Message, command: CommandObject) -> None:
     Установка уведомлений для пользователя в ТГ.
     """
     args = command.args
-    try:
-        # ID пользователя из приложения
-        user_id = int(args)
+    # ID пользователя из приложения
+    user_id = int(args)
+    telegram_id = str(message.from_user.id)
 
-        telegram_id: Union[str, int] = message.from_user.id
-        api = APIManager()
+    # Проверка на привязку Телеграм аккаунта
+    if not await APIManager().check_telegram_id(telegram_id):
+        await APIManager().set_telegram_id(user_id, telegram_id)
+        await message.answer("🔗 Аккаунт ТГ связан с веб-приложением!")
 
-        # Проверка на привязку Телеграм аккаунта
-        if not await api.check_telegram_id(user_id):
-            await api.set_telegram_id(user_id, telegram_id)
-        await message.answer("🆗 Уведомления включены")
-    except Exception as e:
-        await message.answer(
-            f"Произошла ошибка при включении обновлений:\n\n{e}"
-        )
+    # Включение или выключение Телеграм уведомлений
+    state: bool = await APIManager().check_notifications_enabled(user_id)
+    if not state:
+        await APIManager().switch_notifications(user_id)
+        await message.answer("🔔 Уведомления включены")
+    else:
+        await message.answer("🔔 Уведомления уже включены")
 
 
 @simple_router.message(Command("start"))
@@ -97,3 +99,25 @@ async def handle_help(event: Union[Message, CallbackQuery]) -> None:
 
     text: str = read_template("help")
     await message.answer(text, reply_markup=markup, parse_mode="HTML")
+
+
+@simple_router.callback_query(F.data == "connect_web")
+async def connect_web_app(callback: "CallbackQuery") -> None:
+    """
+    Привязка Телеграм аккаунта и Веб приложения.
+    """
+    telegram_id: int = callback.from_user.id
+    try:
+        await APIManager().connect_web(str(telegram_id))
+        await callback.message.answer(
+            read_template("connect"),
+            parse_mode="HTML",
+        )
+    except exc.APIError as e:
+        await callback.message.answer(
+            read_template(
+                "errors/connect",
+                text=e.detail,
+            ),
+            parse_mode="HTML",
+        )

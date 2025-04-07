@@ -2,6 +2,7 @@ name: Deploy to Docker Hub
 
 on:
   pull_request:
+    types: [closed]
     branches:
       - production
 

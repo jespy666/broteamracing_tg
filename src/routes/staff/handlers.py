@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, TypeVar, Union, Dict, List, Any
+from typing import TYPE_CHECKING, TypeVar, Union, Dict, List, Any, Optional
 
 from aiogram import Router, F
 from aiogram.filters import Command
@@ -6,9 +6,8 @@ from aiogram.types import Message, CallbackQuery
 
 from src.api.manager import APIManager
 from src.routes.staff import utils
-from src.routes.booking.utils import validate_booking_id
 from src.middlewares import StaffMiddleware
-from src.utils import read_template
+from src.utils import read_template, render_bookings, validate_booking_id
 from src.keyboards import get_inline_menu, get_reply_markup
 from src.routes.staff.states import AcceptBookingState, DeclineBookingState
 
@@ -33,7 +32,7 @@ async def staff_menu(
     Меню для персонала.
     """
     if not instructor_id:
-        msg: str = read_template("staff/restricted")
+        msg: str = read_template("errors/restricted")
         await message.answer(msg, parse_mode="HTML")
         return
 
@@ -54,16 +53,25 @@ async def ask_booking_id(
     """
     message = event if isinstance(event, Message) else event.message
     if not instructor_id:
-        msg: str = read_template("staff/restricted")
+        msg: str = read_template("errors/restricted")
         await message.answer(msg, parse_mode="HTML")
         await state.clear()
         return
 
     api = APIManager()
     bookings: List[Dict[str, str]] = await api.get_bookings("pending")
+    if not bookings:
+        msg: str = read_template(
+            "errors/empty_bookings",
+            action="взятия в работу",
+        )
+        await message.answer(msg, parse_mode="HTML")
+        await state.clear()
+        return
+
     msg = read_template(
         "staff/accept/booking_id",
-        bookings=utils.render_bookings(bookings),
+        bookings=render_bookings(bookings),
     )
     markup: "ReplyKeyboardMarkup" = get_reply_markup(
         [booking["id"] for booking in bookings]
@@ -81,7 +89,7 @@ async def ask_bike(message: Message, state: "FSMContext") -> None:
     booking_id: str = message.text
     data: Dict[str, Any] = await state.get_data()
     if not validate_booking_id(booking_id, data["bookings"]):
-        msg: str = read_template("staff/accept/wrong_booking_id")
+        msg: str = read_template("errors/chose", entity="ID проката")
         markup: "ReplyKeyboardMarkup" = get_reply_markup(
             [booking["id"] for booking in data["bookings"]]
         )
@@ -115,7 +123,7 @@ async def accept_booking(message: Message, state: "FSMContext") -> None:
     bike: str = message.text
     data: Dict[str, Any] = await state.get_data()
     if bike not in data["available_bikes"].keys():
-        msg: str = read_template("staff/accept/wrong_bike")
+        msg: str = read_template("errors/chose", entity="байк")
         markup: "ReplyKeyboardMarkup" = get_reply_markup(
             list(data["available_bikes"].keys())
         )
@@ -124,12 +132,13 @@ async def accept_booking(message: Message, state: "FSMContext") -> None:
         return
 
     api = APIManager()
-    if not await api.accept_booking(
+    error: Optional[str] = await api.accept_booking(
         int(data["booking"]["id"]),
         data["instructor_id"],
-        data["available_bikes"][bike],
-    ):
-        msg: str = read_template("staff/accept/overbooking")
+        bike,
+    )
+    if error:
+        msg: str = read_template("staff/accept/error", error=error)
         markup: "ReplyKeyboardMarkup" = get_reply_markup(
             [booking["id"] for booking in data["bookings"]]
         )
@@ -154,7 +163,7 @@ async def ask_booking_id(  # noqa: F811
     """
     message = event if isinstance(event, Message) else event.message
     if not instructor_id:
-        msg: str = read_template("staff/restricted")
+        msg: str = read_template("errors/restricted")
         await message.answer(msg, parse_mode="HTML")
         await state.clear()
         return
@@ -164,9 +173,17 @@ async def ask_booking_id(  # noqa: F811
         "confirmed",
         instructor_id=instructor_id,
     )
+    if not bookings:
+        msg: str = read_template(
+            "errors/empty_bookings",
+            action="отказа",
+        )
+        await message.answer(msg, parse_mode="HTML")
+        await state.clear()
+        return
     msg: str = read_template(
         "staff/decline/booking_id",
-        bookings=utils.render_bookings(bookings),
+        bookings=render_bookings(bookings),
     )
     markup: "ReplyKeyboardMarkup" = get_reply_markup(
         [booking["id"] for booking in bookings]
@@ -184,7 +201,7 @@ async def decline_booking(message: Message, state: "FSMContext") -> None:
     booking_id: str = message.text
     data: Dict[str, Any] = await state.get_data()
     if not validate_booking_id(booking_id, data["bookings"]):
-        msg: str = read_template("staff/decline/wrong_booking_id")
+        msg: str = read_template("errors/chose", entity="ID записи")
         markup: "ReplyKeyboardMarkup" = get_reply_markup(
             [booking["id"] for booking in data["bookings"]]
         )
@@ -212,7 +229,7 @@ async def show_bookings(
     """
     message = event if isinstance(event, Message) else event.message
     if not instructor_id:
-        msg: str = read_template("staff/restricted")
+        msg: str = read_template("errors/restricted")
         await message.answer(msg, parse_mode="HTML")
         return
 
@@ -221,9 +238,18 @@ async def show_bookings(
         "confirmed",
         instructor_id=instructor_id,
     )
+    if not bookings:
+        msg: str = read_template(
+            "errors/empty_bookings",
+            action="просмотра",
+        )
+        await message.answer(msg, parse_mode="HTML")
+        await state.clear()
+        return
+
     msg: str = read_template(
         "staff/bookings",
-        bookings=utils.render_bookings(bookings),
+        bookings=render_bookings(bookings),
     )
     markup: "InlineKeyboardMarkup" = get_inline_menu(utils.MENU)
     await message.answer(msg, reply_markup=markup, parse_mode="HTML")

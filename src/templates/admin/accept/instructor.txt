@@ -1,0 +1,3 @@
+<strong>👤 Выберите инструктора для проката</strong>
+
+<em>Сейчас назначен: <strong>{instructor}</strong></em>

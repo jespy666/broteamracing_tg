@@ -1,3 +1,0 @@
-<em><strong>❌ Вы не авторизованы! ❌</strong>
-
-Войдите в систему с помощью: <strong>/login</strong>
